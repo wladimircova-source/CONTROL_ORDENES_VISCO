@@ -31,7 +31,7 @@
         .fase-facturacion { background-color: #ebf8ff; color: #2b6cb0; border: 1px solid #63b3ed; }
         .fase-cancelada { background-color: #c6f6d5; color: #22543d; }
         
-        .btn-tbl { padding: 4px 6px; font-size: 11px; border-radius: 3px; cursor: pointer; border: none; font-weight: bold; color: white; }
+        .btn-tbl { padding: 4px 6px; font-size: 11px; border-radius: 3px; cursor: pointer; border: none; font-weight: bold; color: white; margin-bottom: 2px; display: block; width: 100%; text-align: center; box-sizing: border-box; }
         .btn-next { background-color: #3182ce; }
         .btn-pay { background-color: #38a169; }
         .btn-del { background-color: #e53e3e; }
@@ -196,22 +196,28 @@
             const montoRestante = total - montoCobrado;
 
             if (item.faseActual !== 'CANCELADA') {
-                // Render en flujo activo
                 let claseFase = 'fase-licitacion';
                 if(item.faseActual === 'PROFORMA') claseFase = 'fase-proforma';
                 if(item.faseActual === 'EJECUCION') claseFase = 'fase-ejecucion';
                 if(item.faseActual === 'FACTURACION') claseFase = 'fase-facturacion';
 
-                // Lógica de botones de acción por fase administrativa
+                // CORRECCIÓN DE LOGICA DE BOTONES PARA ÓRDENES AL 100%
                 let accionesHtml = '';
-                if (item.faseActual === 'LICITACION') {
-                    accionesHtml = `<button class="btn-tbl btn-next" onclick="cambiarFase(${index}, 'PROFORMA')">➡️ Emitir Proforma</button>`;
-                } else if (item.faseActual === 'PROFORMA') {
-                    accionesHtml = `<button class="btn-tbl btn-next" onclick="despacharObra(${index})">📦 Generar Nota Entrega / Ejecutar</button>`;
-                } else if (item.faseActual === 'EJECUCION') {
-                    accionesHtml = `<button class="btn-tbl btn-next" onclick="facturarSaldo(${index})">📑 Facturar Saldo Restante</button>`;
-                } else if (item.faseActual === 'FACTURACION') {
-                    accionesHtml = `<button class="btn-tbl btn-pay" onclick="cerrarYLiquidar(${index})">💰 Cobrar y Archivar</button>`;
+                
+                if (porcInicial === 100 && (item.faseActual === 'EJECUCION' || item.faseActual === 'PROFORMA')) {
+                    // Si ya se cobró el 100%, pasamos directo a exigir la Factura y cerrar el trato
+                    accionesHtml = `<button class="btn-tbl btn-pay" onclick="cerrarOrdenCienPorCiento(${index})">📑 Registrar Factura y Cerrar</button>`;
+                } else {
+                    // Flujo normal para pagos parciales (50%, 70%, etc.)
+                    if (item.faseActual === 'LICITACION') {
+                        accionesHtml = `<button class="btn-tbl btn-next" onclick="cambiarFase(${index}, 'PROFORMA')">➡️ Emitir Proforma</button>`;
+                    } else if (item.faseActual === 'PROFORMA') {
+                        accionesHtml = `<button class="btn-tbl btn-next" onclick="despacharObra(${index})">📦 Generar Nota Entrega</button>`;
+                    } else if (item.faseActual === 'EJECUCION') {
+                        accionesHtml = `<button class="btn-tbl btn-next" onclick="facturarSaldo(${index})">📑 Facturar Saldo Restante</button>`;
+                    } else if (item.faseActual === 'FACTURACION') {
+                        accionesHtml = `<button class="btn-tbl btn-pay" onclick="cerrarYLiquidar(${index})">💰 Cobrar Saldo y Archivar</button>`;
+                    }
                 }
 
                 tablaActivos.innerHTML += `
@@ -231,17 +237,16 @@
                         <td>${item.voucher || 'Ninguno'}</td>
                         <td>
                             ${accionesHtml}
-                            <button class="btn-tbl btn-del" onclick="eliminarOrden(${index})">❌</button>
+                            <button class="btn-tbl btn-del" onclick="eliminarOrden(${index})">❌ Eliminar</button>
                         </td>
                     </tr>
                 `;
             } else {
-                // Render en Base de Datos Histórica permanente
                 tablaHistorico.innerHTML += `
                     <tr>
                         <td><strong>${item.cliente}</strong></td>
                         <td>${item.oc || '-'}</td>
-                        <td>${item.factura || '-'}</td>
+                        <td><strong>${item.factura || '-'}</strong></td>
                         <td><strong>$ ${total.toFixed(2)}</strong></td>
                         <td><span class="badge fase-proforma">${item.metodoPago || 'Efectivo/Bs'}</span></td>
                         <td><code>${item.voucher}</code></td>
@@ -271,7 +276,6 @@
         ordenes.push(nueva);
         guardarYRenderizar();
         
-        // Reset inputs básicos
         document.getElementById('cliente').value = '';
         document.getElementById('presupuesto').value = '';
         document.getElementById('proforma').value = '';
@@ -281,12 +285,12 @@
 
     function cambiarFase(index, nuevaFase) {
         ordenes[index].faseActual = nuevaFase;
-        ordenes[index].correo = 'SI'; // Control de envío automático simulado
+        ordenes[index].correo = 'SI';
         guardarYRenderizar();
     }
 
     function despacharObra(index) {
-        const nota = prompt("Ingrese el N° de Nota de Entrega / Control de Material Despachado:");
+        const nota = prompt("Ingrese el N° de Nota de Entrega / Despacho:");
         if (nota) {
             ordenes[index].notaEntrega = nota;
             ordenes[index].faseActual = 'EJECUCION';
@@ -295,11 +299,29 @@
     }
 
     function facturarSaldo(index) {
-        const nFactura = prompt("Obra ejecutada o artículos entregados. Ingrese el N° de Factura Fiscal para cobro del saldo:");
+        const nFactura = prompt("Ingrese el N° de Factura Fiscal para cobro del saldo:");
         if (nFactura) {
             ordenes[index].factura = nFactura;
             ordenes[index].faseActual = 'FACTURACION';
             guardarYRenderizar();
+        }
+    }
+
+    // NUEVA FUNCIÓN EXCLUSIVA PARA LIQUIDAR ÓRDENES QUE YA TIENEN EL 100% COBRADO
+    function cerrarOrdenCienPorCiento(index) {
+        const nFactura = prompt("Esta orden está al 100%. Ingrese el N° de Factura Fiscal para el cierre definitivo:");
+        if (nFactura) {
+            const metodo = prompt("Indique el método de pago definitivo (Efectivo / Bs / Dolar Fisico / USDT):");
+            if (metodo) {
+                const voucher = prompt("Ingrese el N° de Voucher, Referencia o Soporte del pago:");
+                if (voucher) {
+                    ordenes[index].factura = nFactura;
+                    ordenes[index].metodoPago = metodo;
+                    ordenes[index].voucher = voucher;
+                    ordenes[index].faseActual = 'CANCELADA'; // Se archiva directamente
+                    guardarYRenderizar();
+                }
+            }
         }
     }
 
@@ -310,7 +332,7 @@
             if (voucher) {
                 ordenes[index].metodoPago = metodo;
                 ordenes[index].voucher = voucher;
-                ordenes[index].faseActual = 'CANCELADA'; // Esto la saca del flujo activo y la archiva solo en la BD
+                ordenes[index].faseActual = 'CANCELADA';
                 guardarYRenderizar();
             }
         }
