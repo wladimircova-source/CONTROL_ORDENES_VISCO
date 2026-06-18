@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Órdenes y Facturación - Wladimir Cova</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h2 { color: #1a365d; border-bottom: 2px solid #1a365d; padding-bottom: 10px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        label { font-weight: bold; font-size: 14px; color: #4a5568; display: block; margin-bottom: 5px; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #1a365d; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; }
+        button:hover { background-color: #2a4365; }
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; font-size: 13px; }
+        th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; }
+        th { background-color: #2d3748; color: white; }
+        tr:nth-child(even) { background-color: #f7fafc; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; text-align: center; display: inline-block; }
+        .badge-si { background-color: #c6f6d5; color: #22543d; }
+        .badge-no { background-color: #fed7d7; color: #742a2a; }
+        .badge-cerrado { background-color: #48bb78; color: white; }
+        .badge-pendiente { background-color: #e53e3e; color: white; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Control de Entregas, Facturación y Pagos</h2>
+    
+    <!-- Formulario de Registro -->
+    <div class="card">
+        <h3 style="margin-top:0; color:#2b6cb0;">Registrar Nueva Orden</h3>
+        <div class="form-grid">
+            <div>
+                <label>Cliente</label>
+                <input type="text" id="cliente" placeholder="Ej: Visco Orinoco">
+            </div>
+            <div>
+                <label>N° Presupuesto</label>
+                <input type="text" id="presupuesto">
+            </div>
+            <div>
+                <label>N° Proforma</label>
+                <input type="text" id="proforma">
+            </div>
+            <div>
+                <label>N° Orden de Compra</label>
+                <input type="text" id="oc">
+            </div>
+            <div>
+                <label>N° Factura</label>
+                <input type="text" id="factura">
+            </div>
+            <div>
+                <label>Monto Total ($/Bs)</label>
+                <input type="number" id="monto" step="0.01">
+            </div>
+            <div>
+                <label>Método de Pago</label>
+                <select id="metodoPago">
+                    <option value="Pendiente">Por definir / Pendiente</option>
+                    <option value="Efectivo Dol">Efectivo ($)</option>
+                    <option value="Transferencia Bs">Bolívares (Bs)</option>
+                    <option value="Dólar Físico">Dólar Físico</option>
+                    <option value="USDT">USDT (Cripto)</option>
+                </select>
+            </div>
+            <div>
+                <label>¿Correo Enviado?</label>
+                <select id="correo">
+                    <option value="NO">NO</option>
+                    <option value="SÍ">SÍ</option>
+                </select>
+            </div>
+            <div>
+                <label>¿Factura Entregada?</label>
+                <select id="facturaEntregada">
+                    <option value="NO">NO</option>
+                    <option value="SÍ">SÍ</option>
+                </select>
+            </div>
+        </div>
+        <button onclick="agregarRegistro()">Agregar al Sistema</button>
+    </div>
+
+    <!-- Tabla de Visualización -->
+    <div class="card">
+        <h3 style="margin-top:0; color:#2d3748;">Registros Activos</h3>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Presupuesto</th>
+                        <th>Proforma</th>
+                        <th>Orden Compra</th>
+                        <th>N° Factura</th>
+                        <th>Monto</th>
+                        <th>Método Pago</th>
+                        <th>Correo</th>
+                        <th>Fac. Entregada</th>
+                        <th>Estatus Final</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaCuerpo">
+                    <!-- Los datos se insertan aquí automáticamente -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Base de datos temporal en la memoria del navegador
+    let registros = JSON.parse(localStorage.getItem('control_wladimir')) || [];
+
+    function guardarYMostrar() {
+        localStorage.setItem('control_wladimir', JSON.stringify(registros));
+        const cuerpo = document.getElementById('tablaCuerpo');
+        cuerpo.innerHTML = '';
+        
+        registros.forEach((reg) => {
+            // Lógica automática de estatus
+            const estatus = (reg.correo === 'SÍ' && reg.facturaEntregada === 'SÍ') ? 'CERRADO' : 'PENDIENTE';
+            const claseEstatus = estatus === 'CERRADO' ? 'badge-cerrado' : 'badge-pendiente';
+            const claseCorreo = reg.correo === 'SÍ' ? 'badge-si' : 'badge-no';
+            const claseFac = reg.facturaEntregada === 'SÍ' ? 'badge-si' : 'badge-no';
+
+            cuerpo.innerHTML += `
+                <tr>
+                    <td><strong>${reg.cliente}</strong></td>
+                    <td>${reg.presupuesto || '-'}</td>
+                    <td>${reg.proforma || '-'}</td>
+                    <td>${reg.oc || '-'}</td>
+                    <td>${reg.factura || '-'}</td>
+                    <td>${reg.monto ? '$ ' + parseFloat(reg.monto).toFixed(2) : '-'}</td>
+                    <td><span class="badge" style="background:#e2e8f0; color:#4a5568;">${reg.metodoPago}</span></td>
+                    <td><span class="badge ${claseCorreo}">${reg.correo}</span></td>
+                    <td><span class="badge ${claseFac}">${reg.facturaEntregada}</span></td>
+                    <td><span class="badge ${claseEstatus}">${estatus}</span></td>
+                </tr>
+            `;
+        });
+    }
+
+    function agregarRegistro() {
+        const nuevo = {
+            cliente: document.getElementById('cliente').value || 'Sin Nombre',
+            presupuesto: document.getElementById('presupuesto').value,
+            proforma: document.getElementById('proforma').value,
+            oc: document.getElementById('oc').value,
+            factura: document.getElementById('factura').value,
+            monto: document.getElementById('monto').value,
+            metodoPago: document.getElementById('metodoPago').value,
+            correo: document.getElementById('correo').value,
+            facturaEntregada: document.getElementById('facturaEntregada').value
+        };
+
+        registros.push(nuevo);
+        guardarYMostrar();
+        
+        // Limpiar formulario excepto selects
+        document.getElementById('cliente').value = '';
+        document.getElementById('presupuesto').value = '';
+        document.getElementById('proforma').value = '';
+        document.getElementById('oc').value = '';
+        document.getElementById('factura').value = '';
+        document.getElementById('monto').value = '';
+    }
+
+    // Cargar datos al abrir
+    guardarYMostrar();
+</script>
+
+</body>
+</html>
