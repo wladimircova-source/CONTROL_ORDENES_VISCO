@@ -3,81 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control de Órdenes, Facturación y Pagos - Wladimir Cova</title>
+    <title>Sistema de Control Operativo y Financiero - Wladimir Cova</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 1400px; margin: 0 auto; }
-        h2 { color: #1a365d; border-bottom: 2px solid #1a365d; padding-bottom: 10px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f4f8; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 1500px; margin: 0 auto; }
+        .header { background: #1a365d; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { margin: 0; font-size: 24px; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 15px; }
-        label { font-weight: bold; font-size: 13px; color: #4a5568; display: block; margin-bottom: 5px; }
-        input, select { width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
-        button { background-color: #1a365d; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 15px; }
+        label { font-weight: bold; font-size: 12px; color: #4a5568; display: block; margin-bottom: 5px; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; box-sizing: border-box; font-size: 13px; }
+        button { background-color: #1a365d; color: white; border: none; padding: 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; width: 100%; }
         button:hover { background-color: #2a4365; }
-        .btn-action { background-color: #3182ce; padding: 5px 10px; font-size: 11px; border-radius: 4px; width: auto; }
-        .btn-action:hover { background-color: #2b6cb0; }
-        .btn-danger { background-color: #e53e3e; padding: 5px 10px; font-size: 11px; border-radius: 4px; width: auto; margin-left: 5px; }
-        .btn-danger:hover { background-color: #c53030; }
-        .table-responsive { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; font-size: 13px; }
-        th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; }
+        
+        /* Tablas */
+        .table-responsive { overflow-x: auto; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; background: white; font-size: 12px; }
+        th, td { border: 1px solid #e2e8f0; padding: 8px; text-align: left; }
         th { background-color: #2d3748; color: white; }
         tr:nth-child(even) { background-color: #f7fafc; }
-        .badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; text-align: center; display: inline-block; }
-        .badge-si { background-color: #c6f6d5; color: #22543d; }
-        .badge-no { background-color: #fed7d7; color: #742a2a; }
-        .badge-cerrado { background-color: #48bb78; color: white; }
-        .badge-pendiente { background-color: #e53e3e; color: white; }
-        .badge-porcentaje { background-color: #ebf8ff; color: #2b6cb0; border: 1px solid #90cdf4; }
+        
+        /* Badges de Estado */
+        .badge { padding: 4px 6px; border-radius: 4px; font-weight: bold; font-size: 10px; text-align: center; display: inline-block; }
+        .fase-licitacion { background-color: #edf2f7; color: #4a5568; }
+        .fase-proforma { background-color: #feebc8; color: #c05621; }
+        .fase-ejecucion { background-color: #e2e8f0; color: #2b6cb0; font-style: italic; }
+        .fase-facturacion { background-color: #ebf8ff; color: #2b6cb0; border: 1px solid #63b3ed; }
+        .fase-cancelada { background-color: #c6f6d5; color: #22543d; }
+        
+        .btn-tbl { padding: 4px 6px; font-size: 11px; border-radius: 3px; cursor: pointer; border: none; font-weight: bold; color: white; margin-bottom: 2px; display: block; width: 100%; text-align: center; box-sizing: border-box; }
+        .btn-next { background-color: #3182ce; }
+        .btn-pay { background-color: #38a169; }
+        .btn-del { background-color: #e53e3e; }
+        
+        .seccion-titulo { margin-top: 0; border-left: 4px solid #1a365d; padding-left: 10px; color: #1a365d; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Control de Entregas, Facturación y Pagos</h2>
+    <div class="header">
+        <div>
+            <h1>Control de Flujo de Operaciones e Ingresos</h1>
+            <small>Consola de Gestión Administrativa Interna</small>
+        </div>
+    </div>
     
-    <!-- Formulario de Registro -->
+    <!-- FORMULARIO DE REGISTRO INTEGRADO -->
     <div class="card">
-        <h3 style="margin-top:0; color:#2b6cb0;">Registrar Nueva Orden</h3>
+        <h3 class="seccion-titulo">Apertura de Negocio / Registro Inicial</h3>
         <div class="form-grid">
             <div>
                 <label>Cliente</label>
                 <input type="text" id="cliente" placeholder="Ej: Visco Orinoco">
             </div>
             <div>
-                <label>N° Presupuesto</label>
-                <input type="text" id="presupuesto">
+                <label>N° Presupuesto / Licitación</label>
+                <input type="text" id="presupuesto" placeholder="Opcional">
             </div>
             <div>
                 <label>N° Proforma</label>
-                <input type="text" id="proforma">
+                <input type="text" id="proforma" placeholder="Para anticipo">
             </div>
             <div>
-                <label>N° Orden de Compra</label>
-                <input type="text" id="oc">
+                <label>N° Orden de Compra (OC)</label>
+                <input type="text" id="oc" placeholder="Aprobada por cliente">
             </div>
             <div>
-                <label>N° Factura</label>
-                <input type="text" id="factura">
+                <label>Monto Total Contrato ($/Bs)</label>
+                <input type="number" id="montoTotal" step="0.01" oninput="calcularFlujoDinero()">
             </div>
             <div>
-                <label>Monto Total ($/Bs)</label>
-                <input type="number" id="monto" step="0.01">
-            </div>
-            <div>
-                <label>Método de Pago</label>
-                <select id="metodoPago">
-                    <option value="Pendiente">Por definir / Pendiente</option>
-                    <option value="Efectivo Dol">Efectivo ($)</option>
-                    <option value="Transferencia Bs">Bolívares (Bs)</option>
-                    <option value="Dólar Físico">Dólar Físico</option>
-                    <option value="USDT">USDT (Cripto)</option>
-                </select>
-            </div>
-            <div>
-                <label>Porcentaje de la OC</label>
-                <select id="porcentajeOc">
-                    <option value="100">100% (Completa)</option>
+                <label>% Anticipo Solicitado</label>
+                <select id="porcentajeOc" onchange="calcularFlujoDinero()">
+                    <option value="100">100% (Contado)</option>
                     <option value="90">90%</option>
                     <option value="80">80%</option>
                     <option value="70">70%</option>
@@ -85,14 +84,19 @@
                 </select>
             </div>
             <div>
-                <label>¿N° Voucher / Soporte?</label>
-                <input type="text" id="voucher" placeholder="Ej: Ref 45928 / Efectivo">
+                <label>Monto Anticipo ($/Bs)</label>
+                <input type="text" id="montoAnticipo" readonly style="background:#edf2f7;">
             </div>
             <div>
-                <label>Estatus de Pago Inicial</label>
-                <select id="estatusPago">
-                    <option value="PENDIENTE">PENDIENTE</option>
-                    <option value="CANCELADA">CANCELADA</option>
+                <label>Monto Restante ($/Bs)</label>
+                <input type="text" id="montoRestante" readonly style="background:#edf2f7;">
+            </div>
+            <div>
+                <label>Fase Operativa Inicial</label>
+                <select id="faseActual">
+                    <option value="LICITACION">1. Licitación / Presupuesto</option>
+                    <option value="PROFORMA">2. Proforma / Esperando Anticipo</option>
+                    <option value="EJECUCION">3. Ejecución / Nota de Entrega</option>
                 </select>
             </div>
             <div>
@@ -102,42 +106,59 @@
                     <option value="SI">SI</option>
                 </select>
             </div>
-            <div>
-                <label>¿Factura Entregada?</label>
-                <select id="facturaEntregada">
-                    <option value="NO">NO</option>
-                    <option value="SI">SI</option>
-                </select>
-            </div>
         </div>
-        <button onclick="agregarRegistro()">Agregar al Sistema</button>
+        <button onclick="agregarOrden()">Ingresar Orden al Flujo Activo</button>
     </div>
 
-    <!-- Tabla de Visualización -->
+    <!-- TABLA DE CONTROL OPERATIVO ACTIVO -->
     <div class="card">
-        <h3 style="margin-top:0; color:#2d3748;">Registros Activos</h3>
+        <h3 class="seccion-titulo" style="color: #dd6b20;">Operaciones en Curso (Flujo de Caja y Documentos)</h3>
         <div class="table-responsive">
             <table>
                 <thead>
                     <tr>
                         <th>Cliente</th>
-                        <th>Presupuesto</th>
-                        <th>Proforma</th>
-                        <th>Orden Compra</th>
-                        <th>N° Factura</th>
-                        <th>Monto</th>
-                        <th>Método Pago</th>
-                        <th>% OC</th>
-                        <th>% Restante</th>
+                        <th>N° Presupuesto / Proforma</th>
+                        <th>N° OC</th>
+                        <th>Monto Total</th>
+                        <th>% Inicial / Cobrado</th>
+                        <th>Monto Cobrado</th>
+                        <th>% Restante / Por Cobrar</th>
+                        <th>Monto Restante</th>
+                        <th>N° Nota Entrega</th>
+                        <th>N° Factura Final</th>
                         <th>Correo</th>
-                        <th>Fac. Entg.</th>
-                        <th>N° Voucher / Soporte</th>
-                        <th>Estatus Pago</th>
-                        <th>Acciones</th>
+                        <th>Fase Actual</th>
+                        <th>Voucher / Soporte</th>
+                        <th>Acciones Administrativas</th>
                     </tr>
                 </thead>
-                <tbody id="tablaCuerpo">
-                    <!-- Los datos se insertan aquí automáticamente -->
+                <tbody id="tablaActivos">
+                    <!-- Dinámico -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TABLA HISTÓRICA / BASE DE DATOS DE CONTRATOS CERRADOS -->
+    <div class="card" style="background: #edf2f7;">
+        <h3 class="seccion-titulo" style="color: #2f855a;">Base de Datos Histórica (Órdenes Canceladas y Liquidadas)</h3>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr style="background-color: #2f855a;">
+                        <th>Cliente</th>
+                        <th>N° OC</th>
+                        <th>N° Factura</th>
+                        <th>Monto Total Liquidado</th>
+                        <th>Forma de Pago</th>
+                        <th>N° Voucher / Soporte Cierre</th>
+                        <th>Nota de Entrega</th>
+                        <th>Estatus Final</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaHistorico">
+                    <!-- Dinámico -->
                 </tbody>
             </table>
         </div>
@@ -145,103 +166,186 @@
 </div>
 
 <script>
-    let registros = JSON.parse(localStorage.getItem('control_wladimir')) || [];
+    let ordenes = JSON.parse(localStorage.getItem('empresa_cova_flow')) || [];
 
-    function guardarYMostrar() {
-        localStorage.setItem('control_wladimir', JSON.stringify(registros));
-        const cuerpo = document.getElementById('tablaCuerpo');
-        cuerpo.innerHTML = '';
+    function calcularFlujoDinero() {
+        const total = parseFloat(document.getElementById('montoTotal').value) || 0;
+        const porcentaje = parseInt(document.getElementById('porcentajeOc').value) || 100;
         
-        registros.forEach((reg, index) => {
-            const claseEstatus = reg.estatusPago === 'CANCELADA' ? 'badge-cerrado' : 'badge-pendiente';
-            const claseCorreo = reg.correo === 'SI' ? 'badge-si' : 'badge-no';
-            const claseFac = reg.facturaEntregada === 'SI' ? 'badge-si' : 'badge-no';
-            
-            // Cálculo del porcentaje restante automático
-            const ocNum = parseInt(reg.porcentajeOc) || 100;
-            const restante = 100 - ocNum;
+        const anticipo = (total * porcentaje) / 100;
+        const restante = total - anticipo;
+        
+        document.getElementById('montoAnticipo').value = '$ ' + anticipo.toFixed(2);
+        document.getElementById('montoRestante').value = '$ ' + restante.toFixed(2);
+    }
 
-            // Botón de acción dinámico
-            let botonAccion = '';
-            if (reg.estatusPago === 'PENDIENTE') {
-                botonAccion = `<button class="btn-action" onclick="marcarComoCancelada(${index})">💰 Cobrar</button>`;
+    function guardarYRenderizar() {
+        localStorage.setItem('empresa_cova_flow', JSON.stringify(ordenes));
+        
+        const tablaActivos = document.getElementById('tablaActivos');
+        const tablaHistorico = document.getElementById('tablaHistorico');
+        
+        tablaActivos.innerHTML = '';
+        tablaHistorico.innerHTML = '';
+        
+        ordenes.forEach((item, index) => {
+            const total = parseFloat(item.montoTotal) || 0;
+            const porcInicial = parseInt(item.porcentajeOc) || 100;
+            const montoCobrado = (total * porcInicial) / 100;
+            const porcRestante = 100 - porcInicial;
+            const montoRestante = total - montoCobrado;
+
+            if (item.faseActual !== 'CANCELADA') {
+                let claseFase = 'fase-licitacion';
+                if(item.faseActual === 'PROFORMA') claseFase = 'fase-proforma';
+                if(item.faseActual === 'EJECUCION') claseFase = 'fase-ejecucion';
+                if(item.faseActual === 'FACTURACION') claseFase = 'fase-facturacion';
+
+                // CORRECCIÓN DE LOGICA DE BOTONES PARA ÓRDENES AL 100%
+                let accionesHtml = '';
+                
+                if (porcInicial === 100 && (item.faseActual === 'EJECUCION' || item.faseActual === 'PROFORMA')) {
+                    // Si ya se cobró el 100%, pasamos directo a exigir la Factura y cerrar el trato
+                    accionesHtml = `<button class="btn-tbl btn-pay" onclick="cerrarOrdenCienPorCiento(${index})">📑 Registrar Factura y Cerrar</button>`;
+                } else {
+                    // Flujo normal para pagos parciales (50%, 70%, etc.)
+                    if (item.faseActual === 'LICITACION') {
+                        accionesHtml = `<button class="btn-tbl btn-next" onclick="cambiarFase(${index}, 'PROFORMA')">➡️ Emitir Proforma</button>`;
+                    } else if (item.faseActual === 'PROFORMA') {
+                        accionesHtml = `<button class="btn-tbl btn-next" onclick="despacharObra(${index})">📦 Generar Nota Entrega</button>`;
+                    } else if (item.faseActual === 'EJECUCION') {
+                        accionesHtml = `<button class="btn-tbl btn-next" onclick="facturarSaldo(${index})">📑 Facturar Saldo Restante</button>`;
+                    } else if (item.faseActual === 'FACTURACION') {
+                        accionesHtml = `<button class="btn-tbl btn-pay" onclick="cerrarYLiquidar(${index})">💰 Cobrar Saldo y Archivar</button>`;
+                    }
+                }
+
+                tablaActivos.innerHTML += `
+                    <tr>
+                        <td><strong>${item.cliente}</strong></td>
+                        <td>Pre: ${item.presupuesto || '-'}<br>Prof: ${item.proforma || '-'}</td>
+                        <td><strong>${item.oc || '-'}</strong></td>
+                        <td>$ ${total.toFixed(2)}</td>
+                        <td><span class="badge fase-proforma">${porcInicial}%</span></td>
+                        <td>$ ${montoCobrado.toFixed(2)}</td>
+                        <td><span class="badge fase-licitacion">${porcRestante}%</span></td>
+                        <td>$ ${montoRestante.toFixed(2)}</td>
+                        <td><strong>${item.notaEntrega || 'Pendiente'}</strong></td>
+                        <td><strong>${item.factura || 'No emitida'}</strong></td>
+                        <td><span class="badge ${item.correo === 'SI' ? 'fase-cancelada' : 'badge-del'}">${item.correo}</span></td>
+                        <td><span class="badge ${claseFase}">${item.faseActual}</span></td>
+                        <td>${item.voucher || 'Ninguno'}</td>
+                        <td>
+                            ${accionesHtml}
+                            <button class="btn-tbl btn-del" onclick="eliminarOrden(${index})">❌ Eliminar</button>
+                        </td>
+                    </tr>
+                `;
             } else {
-                botonAccion = `<span style="color: #48bb78; font-weight: bold;">✓ Pagado</span>`;
+                tablaHistorico.innerHTML += `
+                    <tr>
+                        <td><strong>${item.cliente}</strong></td>
+                        <td>${item.oc || '-'}</td>
+                        <td><strong>${item.factura || '-'}</strong></td>
+                        <td><strong>$ ${total.toFixed(2)}</strong></td>
+                        <td><span class="badge fase-proforma">${item.metodoPago || 'Efectivo/Bs'}</span></td>
+                        <td><code>${item.voucher}</code></td>
+                        <td>${item.notaEntrega || '-'}</td>
+                        <td><span class="badge fase-cancelada">LIQUIDADA & CERRADA</span></td>
+                    </tr>
+                `;
             }
-
-            cuerpo.innerHTML += `
-                <tr>
-                    <td><strong>${reg.cliente}</strong></td>
-                    <td>${reg.presupuesto || '-'}</td>
-                    <td>${reg.proforma || '-'}</td>
-                    <td>${reg.oc || '-'}</td>
-                    <td>${reg.factura || '-'}</td>
-                    <td>${reg.monto ? '$ ' + parseFloat(reg.monto).toFixed(2) : '-'}</td>
-                    <td><span class="badge" style="background:#e2e8f0; color:#4a5568;">${reg.metodoPago}</span></td>
-                    <td><span class="badge badge-porcentaje">${ocNum}%</span></td>
-                    <td><span class="badge" style="background:#edf2f7;">${restante}%</span></td>
-                    <td><span class="badge ${claseCorreo}">${reg.correo}</span></td>
-                    <td><span class="badge ${claseFac}">${reg.facturaEntregada}</span></td>
-                    <td><strong>${reg.voucher || 'Ninguno'}</strong></td>
-                    <td><span class="badge ${claseEstatus}">${reg.estatusPago}</span></td>
-                    <td>
-                        ${botonAccion}
-                        <button class="btn-danger" onclick="eliminarRegistro(${index})">❌</button>
-                    </td>
-                </tr>
-            `;
         });
     }
 
-    function agregarRegistro() {
-        const nuevo = {
+    function agregarOrden() {
+        const nueva = {
             cliente: document.getElementById('cliente').value || 'Sin Nombre',
             presupuesto: document.getElementById('presupuesto').value,
             proforma: document.getElementById('proforma').value,
             oc: document.getElementById('oc').value,
-            factura: document.getElementById('factura').value,
-            monto: document.getElementById('monto').value,
-            metodoPago: document.getElementById('metodoPago').value,
+            montoTotal: document.getElementById('montoTotal').value || 0,
             porcentajeOc: document.getElementById('porcentajeOc').value,
-            voucher: document.getElementById('voucher').value || 'Ninguno',
-            estatusPago: document.getElementById('estatusPago').value,
+            faseActual: document.getElementById('faseActual').value,
             correo: document.getElementById('correo').value,
-            facturaEntregada: document.getElementById('facturaEntregada').value
+            notaEntrega: '',
+            factura: '',
+            voucher: '',
+            metodoPago: ''
         };
-
-        registros.push(nuevo);
-        guardarYMostrar();
+        ordenes.push(nueva);
+        guardarYRenderizar();
         
-        // Limpiar campos de texto
         document.getElementById('cliente').value = '';
         document.getElementById('presupuesto').value = '';
         document.getElementById('proforma').value = '';
         document.getElementById('oc').value = '';
-        document.getElementById('factura').value = '';
-        document.getElementById('monto').value = '';
-        document.getElementById('voucher').value = '';
+        document.getElementById('montoTotal').value = '';
     }
 
-    // FUNCIÓN PARA CORREGIR Y PASAR DE PENDIENTE A CANCELADA DESDE LA TABLA
-    function marcarComoCancelada(index) {
-        const nVoucher = prompt("Ingrese el N° de Voucher, Referencia o detalle de cómo fue cancelado:");
-        if (nVoucher !== null && nVoucher.trim() !== "") {
-            registros[index].estatusPago = 'CANCELADA';
-            registros[index].voucher = nVoucher;
-            guardarYMostrar();
-        } else if (nVoucher !== null) {
-            alert("Debe ingresar un número de voucher o referencia para poder cancelarla.");
+    function cambiarFase(index, nuevaFase) {
+        ordenes[index].faseActual = nuevaFase;
+        ordenes[index].correo = 'SI';
+        guardarYRenderizar();
+    }
+
+    function despacharObra(index) {
+        const nota = prompt("Ingrese el N° de Nota de Entrega / Despacho:");
+        if (nota) {
+            ordenes[index].notaEntrega = nota;
+            ordenes[index].faseActual = 'EJECUCION';
+            guardarYRenderizar();
         }
     }
 
-    function eliminarRegistro(index) {
-        if (confirm("¿Está seguro de eliminar este registro?")) {
-            registros.splice(index, 1);
-            guardarYMostrar();
+    function facturarSaldo(index) {
+        const nFactura = prompt("Ingrese el N° de Factura Fiscal para cobro del saldo:");
+        if (nFactura) {
+            ordenes[index].factura = nFactura;
+            ordenes[index].faseActual = 'FACTURACION';
+            guardarYRenderizar();
         }
     }
 
-    guardarYMostrar();
+    // NUEVA FUNCIÓN EXCLUSIVA PARA LIQUIDAR ÓRDENES QUE YA TIENEN EL 100% COBRADO
+    function cerrarOrdenCienPorCiento(index) {
+        const nFactura = prompt("Esta orden está al 100%. Ingrese el N° de Factura Fiscal para el cierre definitivo:");
+        if (nFactura) {
+            const metodo = prompt("Indique el método de pago definitivo (Efectivo / Bs / Dolar Fisico / USDT):");
+            if (metodo) {
+                const voucher = prompt("Ingrese el N° de Voucher, Referencia o Soporte del pago:");
+                if (voucher) {
+                    ordenes[index].factura = nFactura;
+                    ordenes[index].metodoPago = metodo;
+                    ordenes[index].voucher = voucher;
+                    ordenes[index].faseActual = 'CANCELADA'; // Se archiva directamente
+                    guardarYRenderizar();
+                }
+            }
+        }
+    }
+
+    function cerrarYLiquidar(index) {
+        const metodo = prompt("Indique el método de pago definitivo (Efectivo / Bs / Dolar Fisico / USDT):");
+        if(metodo) {
+            const voucher = prompt("Ingrese el N° de Voucher, Referencia o Soporte de Caja Final:");
+            if (voucher) {
+                ordenes[index].metodoPago = metodo;
+                ordenes[index].voucher = voucher;
+                ordenes[index].faseActual = 'CANCELADA';
+                guardarYRenderizar();
+            }
+        }
+    }
+
+    function eliminarOrden(index) {
+        if(confirm("¿Seguro que deseas eliminar esta operación?")) {
+            ordenes.splice(index, 1);
+            guardarYRenderizar();
+        }
+    }
+
+    guardarYRenderizar();
 </script>
 
 </body>
