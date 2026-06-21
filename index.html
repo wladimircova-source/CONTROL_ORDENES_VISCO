@@ -6,7 +6,7 @@
     <style>
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
-            background-color: #0f172a; /* Fondo azul noche oscuro, muy elegante */
+            background-color: #0f172a; /* Fondo azul noche oscuro */
             color: #f8fafc;
             margin: 0;
             padding: 20px;
@@ -57,7 +57,7 @@
         }
         /* ESTILOS DEL FORMULARIO */
         .card-form {
-            background-color: #1e293b; /* Fondo gris grafito para las tarjetas */
+            background-color: #1e293b; 
             border: 1px solid #334155;
             border-radius: 8px;
             padding: 20px;
@@ -109,12 +109,12 @@
         .total-vendido {
             background-color: #1e293b;
             border: 1px solid #334155;
-            border-left: 6px solid #3b82f6; /* Detalle azul */
+            border-left: 6px solid #3b82f6;
         }
         .total-pendiente {
             background-color: #1e293b;
             border: 1px solid #334155;
-            border-left: 6px solid #f59e0b; /* Detalle dorado/ámbar elegante para lo pendiente */
+            border-left: 6px solid #f59e0b;
         }
         .card-total h3 {
             margin: 0 0 8px 0;
@@ -130,7 +130,7 @@
             color: #ffffff;
         }
         .total-pendiente .monto {
-            color: #fef08a; /* Resalte dorado suave para el dinero en la calle */
+            color: #fef08a;
         }
         /* BOTONES DE EXPORTACIÓN */
         .btn-panel {
@@ -153,7 +153,7 @@
         .btn-excel { background-color: #10b981; }
         .btn-print { background-color: #475569; }
 
-        /* ESTILOS DE LA TABLA - ESTILO OSCURO ELEGANTE */
+        /* ESTILOS DE LA TABLA - CON SEPARADORES CLAROS */
         .table-container {
             background-color: #1e293b;
             border-radius: 8px;
@@ -167,6 +167,7 @@
             font-size: 12px;
             color: #cbd5e1;
         }
+        /* CORRECCIÓN: Separadores verticales para los encabezados (Como en image_046f0e.png) */
         th {
             background-color: #0f172a;
             color: #ffffff;
@@ -174,21 +175,32 @@
             padding: 12px 10px;
             text-align: left;
             border-bottom: 2px solid #334155;
+            border-right: 1px solid #334155; /* Línea de separación derecha */
+            border-left: 1px solid #1e293b;  /* Línea sutil izquierda para dar relieve */
             text-transform: uppercase;
             font-size: 11px;
             letter-spacing: 0.5px;
         }
+        th:first-child {
+            border-left: none; /* Quita el borde sobrante en la primera columna */
+        }
+        th:last-child {
+            border-right: none; /* Quita el borde sobrante en la última columna */
+        }
         td {
             padding: 12px 10px;
             border-bottom: 1px solid #334155;
-            border-right: 1px solid #1e293b;
+            border-right: 1px solid #334155; /* Separador en las celdas de datos también */
             vertical-align: middle;
             background-color: #1e293b;
         }
-        tr:hover td {
-            background-color: #24334d !important; /* Resalte al pasar el mouse */
+        td:last-child {
+            border-right: none;
         }
-        /* BADGES CON TONOS ELEGANTES */
+        tr:hover td {
+            background-color: #24334d !important;
+        }
+        /* BADGES */
         .badge-pct {
             background-color: #334155;
             color: #93c5fd;
@@ -340,6 +352,7 @@
     <div class="card-form solo-admin">
         <form id="formCova" onsubmit="agregarFila(event)">
             <div class="form-grid">
+                <div class="form-grid">
                 <div class="form-group">
                     <label>Cliente</label>
                     <input type="text" id="ins_cliente" value="VISCO" required>
