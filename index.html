@@ -14,11 +14,35 @@
             max-width: 100%;
             margin: 0 auto;
         }
+        .header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
         h2 {
             color: #2c3e50;
             font-size: 20px;
-            margin-bottom: 15px;
+            margin: 0;
             font-weight: bold;
+        }
+        /* CONTROL DE ACCESO VISIBLE */
+        .status-usuario {
+            background-color: #e2e8f0;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #334155;
+        }
+        .btn-logout {
+            background-color: #64748b;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            margin-left: 8px;
+            border-radius: 4px;
+            cursor: pointer;
         }
         /* ESTILOS DEL FORMULARIO */
         .card-form {
@@ -31,7 +55,7 @@
         }
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
             gap: 12px;
             align-items: flex-end;
         }
@@ -70,8 +94,8 @@
             border-left: 6px solid #3b82f6;
         }
         .total-pendiente {
-            background-color: #fee2e2; /* Rojo suave de fondo */
-            color: #991b1b; /* Texto rojo oscuro para contraste */
+            background-color: #fee2e2;
+            color: #991b1b;
             border-left: 6px solid #ef4444;
         }
         .card-total h3 {
@@ -149,14 +173,12 @@
             padding: 3px 6px;
             border-radius: 4px;
             font-weight: bold;
-            font-size: 11px;
         }
         .badge-no {
             background-color: #ff3333;
             color: #fff;
             padding: 3px 6px;
             border-radius: 4px;
-            font-size: 11px;
             font-weight: bold;
         }
         .badge-si {
@@ -165,7 +187,6 @@
             padding: 3px 6px;
             border-radius: 4px;
             font-weight: bold;
-            font-size: 11px;
         }
         .btn-correo {
             border: none;
@@ -173,7 +194,6 @@
             border-radius: 6px;
             padding: 6px 10px;
             font-weight: bold;
-            font-size: 11px;
         }
         .fase-ejecucion {
             background-color: #ebf8ff;
@@ -181,7 +201,6 @@
             padding: 3px 6px;
             border-radius: 4px;
             font-weight: bold;
-            font-size: 10px;
         }
         .fase-proforma {
             background-color: #fffaf0;
@@ -189,11 +208,26 @@
             padding: 3px 6px;
             border-radius: 4px;
             font-weight: bold;
-            font-size: 10px;
+        }
+        /* BOTÓN DE NOTA INTERACTIVA */
+        .btn-nota {
+            background-color: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+            padding: 4px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        .btn-nota.con-texto {
+            background-color: #fef08a;
+            color: #854d0e;
+            border: 1px solid #fef08a;
         }
         /* BOTONES ACCIONES */
         .btn-add {
-            background-color: #2563eb; /* Azul corporativo moderno */
+            background-color: #2563eb;
             color: white;
             border: none;
             padding: 8px 15px;
@@ -221,22 +255,34 @@
         .btn-blue { background-color: #3b82f6; }
         .btn-red { background-color: #ef4444; }
 
-        /* REGLAS ESPECIALES PARA LA IMPRESIÓN IMPRESA O EN PDF */
+        /* MODO SOLO CONSULTA: OCULTA ELEMENTOS CRÍTICOS */
+        .modo-consulta .solo-admin, 
+        .modo-consulta .acciones-header, 
+        .modo-consulta .acciones-celda {
+            display: none !important;
+        }
+
         @media print {
-            .card-form, .btn-panel, th:last-child, td:last-child, .form-group-filter {
+            .card-form, .btn-panel, th:last-child, td:last-child, .form-group-filter, .btn-logout {
                 display: none !important;
             }
             body { background-color: #fff; padding: 0; }
             .table-container { box-shadow: none; }
-            th { background-color: #475569 !important; color: #000 !important; border: 1px solid #94a3b8; }
+            th { background-color: #475569 !important; color: #fff !important; border: 1px solid #94a3b8; }
             td { border: 1px solid #cbd5e1; }
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Operaciones en Curso (Flujo de Caja y Documentos)</h2>
+<div class="container" id="contenedorPrincipal">
+    <div class="header-flex">
+        <h2>Operaciones en Curso (Flujo de Caja y Documentos)</h2>
+        <div>
+            <span class="status-usuario" id="txtRol">Acceso: Verificando...</span>
+            <button class="btn-logout" onclick="solicitarAcceso()">Cambiar Rol</button>
+        </div>
+    </div>
 
     <!-- RESUMEN DE TOTALES ACUMULADOS -->
     <div class="resumen-financiero">
@@ -260,13 +306,17 @@
         </div>
     </div>
 
-    <!-- FORMULARIO DE INGRESO -->
-    <div class="card-form">
+    <!-- FORMULARIO DE INGRESO (SOLO ADMIN) -->
+    <div class="card-form solo-admin">
         <form id="formCova" onsubmit="agregarFila(event)">
             <div class="form-grid">
                 <div class="form-group">
                     <label>Cliente</label>
                     <input type="text" id="ins_cliente" value="VISCO" required>
+                </div>
+                <div class="form-group">
+                    <label>Comprador VISCO</label>
+                    <input type="text" id="ins_comprador" placeholder="Ej: Ing. Carlos" required>
                 </div>
                 <div class="form-group">
                     <label>Presupuesto</label>
@@ -295,7 +345,7 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>¿Correo Enviado?</label>
+                    <label>¿Correo?</label>
                     <select id="ins_correo">
                         <option value="SI">SI</option>
                         <option value="NO">NO</option>
@@ -314,6 +364,7 @@
             <thead>
                 <tr>
                     <th>Cliente</th>
+                    <th>Comprador</th>
                     <th>N° Presupuesto / Proforma</th>
                     <th>N° OC</th>
                     <th>Monto Total</th>
@@ -326,6 +377,7 @@
                     <th>Correo</th>
                     <th>Fase Actual</th>
                     <th>Voucher / Soporte</th>
+                    <th>Observaciones</th>
                     <th class="acciones-header">Acciones Administrativas</th>
                 </tr>
             </thead>
@@ -337,12 +389,43 @@
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", cargarTabla);
+    let esAdmin = false;
+    // CONTRASEÑA CLAVE DEL SISTEMA
+    const CLAVE_CORRECTA = "cova360";
+
+    document.addEventListener("DOMContentLoaded", () => {
+        solicitarAcceso();
+    });
+
+    function verificarSeguridadEstilos() {
+        const contenedor = document.getElementById('contenedorPrincipal');
+        if (!esAdmin) {
+            contenedor.classList.add('modo-consulta');
+            document.getElementById('txtRol').innerText = "Acceso: SÓLO CONSULTA (Ventas/Contadora/Cobranza)";
+        } else {
+            contenedor.classList.remove('modo-consulta');
+            document.getElementById('txtRol').innerText = "Acceso: GERENCIA GENERAL (Completo)";
+        }
+    }
+
+    function solicitarAcceso() {
+        const pass = prompt("SISTEMA COVA 360 - Ingrese clave de autorización (Deje en blanco para modo lectura):");
+        if (pass === CLAVE_CORRECTA) {
+            esAdmin = true;
+        } else {
+            if(pass !== null && pass !== "") alert("Clave incorrecta. Entrando en modo de solo lectura.");
+            esAdmin = false;
+        }
+        verificarSeguridadEstilos();
+        cargarTabla();
+    }
 
     function agregarFila(event) {
         event.preventDefault();
+        if(!esAdmin) return;
 
         const cliente = document.getElementById('ins_cliente').value;
+        const comprador = document.getElementById('ins_comprador').value;
         const pre = document.getElementById('ins_pre').value || '-';
         const prof = document.getElementById('ins_prof').value || '-';
         const oc = document.getElementById('ins_oc').value;
@@ -359,6 +442,7 @@
         const nuevaOp = {
             id: Date.now(),
             cliente,
+            comprador,
             pre,
             prof,
             oc,
@@ -371,7 +455,8 @@
             factura: 'No emitida',
             correo: correo,
             fase: fase,
-            voucher: 'Ninguno'
+            voucher: 'Ninguno',
+            observacion: ''
         };
 
         let operaciones = JSON.parse(localStorage.getItem('ops_cova_360')) || [];
@@ -389,17 +474,17 @@
         let operaciones = JSON.parse(localStorage.getItem('ops_cova_360')) || [];
 
         tbody.innerHTML = '';
-
         let acumuladoVendido = 0;
         let acumuladoPendiente = 0;
 
-        // Filtrar registros en base a la búsqueda en tiempo real
         let operacionesFiltradas = operaciones.filter(op => {
-            return op.cliente.toLowerCase().includes(filtro) || op.oc.toLowerCase().includes(filtro);
+            return op.cliente.toLowerCase().includes(filtro) || 
+                   op.oc.toLowerCase().includes(filtro) || 
+                   (op.comprador && op.comprador.toLowerCase().includes(filtro));
         });
 
         if (operacionesFiltradas.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="14" style="text-align:center; color:#94a3b8; padding:20px;">No se encontraron transacciones.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="16" style="text-align:center; color:#94a3b8; padding:20px;">No se encontraron transacciones.</td></tr>`;
             document.getElementById('globalTotalVendido').innerText = "$ 0.00";
             document.getElementById('globalTotalPendiente').innerText = "$ 0.00";
             return;
@@ -416,7 +501,14 @@
             let facturaHTML = op.factura === 'No emitida' ? `<span class="badge-no">${op.factura}</span>` : `<span class="badge-si">${op.factura}</span>`;
             
             let claseCorreo = op.correo === 'SI' ? 'badge-si' : 'badge-no';
-            let correoHTML = `<button class="btn-correo ${claseCorreo}" onclick="alternarCorreo(${op.id})">${op.correo}</button>`;
+            let correoHTML = esAdmin ? 
+                `<button class="btn-correo ${claseCorreo}" onclick="alternarCorreo(${op.id})">${op.correo}</button>` : 
+                `<span class="${claseCorreo}" style="padding:4px 8px; border-radius:4px;">${op.correo}</span>`;
+
+            // Configuración visual del botón de notas
+            let claseNota = op.observacion ? 'btn-nota con-texto' : 'btn-nota';
+            let textoBotonNota = op.observacion ? '📝 Ver Nota' : '➕ Nota';
+            let celdaNotaHTML = `<button class="${claseNota}" onclick="gestionarNota(${op.id})">${textoBotonNota}</button>`;
 
             let botonPrincipalHTML = '';
             if (interstateMonto > 0 && op.fase === 'PROFORMA') {
@@ -430,6 +522,7 @@
             const fila = `
                 <tr>
                     <td style="font-weight:bold;">${op.cliente}</td>
+                    <td style="color:#475569; font-weight:500;">${op.comprador || '-'}</td>
                     <td>Pre: ${op.pre}<br><span style="color:#64748b;">Prof: ${op.prof}</span></td>
                     <td style="font-weight:bold; color:#0f172a;">${op.oc}</td>
                     <td>$ ${parseFloat(op.monto).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
@@ -442,6 +535,7 @@
                     <td>${correoHTML}</td>
                     <td><span class="${claseFase}">${op.fase}</span></td>
                     <td>${op.voucher}</td>
+                    <td>${celdaNotaHTML}</td>
                     <td class="acciones-celda">
                         ${botonPrincipalHTML}
                         <button class="btn-action btn-red" onclick="eliminarFila(${op.id})">❌ Eliminar</button>
@@ -455,7 +549,24 @@
         document.getElementById('globalTotalPendiente').innerText = "$ " + acumuladoPendiente.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     }
 
+    function gestionarNota(id) {
+        let operaciones = JSON.parse(localStorage.getItem('ops_cova_360'));
+        let op = operaciones.find(o => o.id === id);
+        
+        if (esAdmin) {
+            const nuevaNota = prompt(`Modificar observaciones para OC: ${op.oc}`, op.observacion || '');
+            if (nuevaNota !== null) {
+                op.observacion = nuevaNota;
+                localStorage.setItem('ops_cova_360', JSON.stringify(operaciones));
+                cargarTabla();
+            }
+        } else {
+            alert(`OBSERVACIÓN (Modo Lectura):\n\n"${op.observacion || 'Sin notas registradas para esta orden.'}"`);
+        }
+    }
+
     function alternarCorreo(id) {
+        if(!esAdmin) return;
         let operaciones = JSON.parse(localStorage.getItem('ops_cova_360'));
         operaciones = operaciones.map(op => {
             if (op.id === id) op.correo = op.correo === 'SI' ? 'NO' : 'SI';
@@ -466,6 +577,7 @@
     }
 
     function cambiarFase(id, nuevaFase, textoNota) {
+        if(!esAdmin) return;
         let operaciones = JSON.parse(localStorage.getItem('ops_cova_360'));
         operaciones = operaciones.map(op => {
             if (op.id === id) {
@@ -479,6 +591,7 @@
     }
 
     function cobrarSaldo(id) {
+        if(!esAdmin) return;
         let operaciones = JSON.parse(localStorage.getItem('ops_cova_360'));
         operaciones = operaciones.map(op => {
             if (op.id === id) {
@@ -495,6 +608,7 @@
     }
 
     function cerrarContrato(id) {
+        if(!esAdmin) return;
         let operaciones = JSON.parse(localStorage.getItem('ops_cova_360'));
         const nroFactura = prompt("Ingrese el Numero de Factura Final asignado:");
         if (!nroFactura) return;
@@ -512,6 +626,7 @@
     }
 
     function eliminarFila(id) {
+        if(!esAdmin) return;
         if(confirm("¿Seguro que deseas eliminar esta orden de compra?")) {
             let operaciones = JSON.parse(localStorage.getItem('ops_cova_360'));
             operaciones = operaciones.filter(op => op.id !== id);
@@ -520,12 +635,10 @@
         }
     }
 
-    // EXPORTACIÓN LIMPIA A EXCEL
     function exportarExcel() {
         let tabla = document.getElementById("tablaOperaciones");
         let html = tabla.outerHTML;
         
-        // Remover columna de acciones para el Excel limpio
         html = html.replace(/<th class="acciones-header">.*?<\/th>/g, '');
         html = html.replace(/<td class="acciones-celda">.*?<\/td>/g, '');
 
@@ -540,5 +653,4 @@
 </script>
 
 </body>
-</html>
 </html>
