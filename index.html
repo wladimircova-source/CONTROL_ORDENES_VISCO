@@ -69,6 +69,9 @@
             grid-column: 1 / -1;
             margin-top: 10px;
         }
+        .btn:hover {
+            background-color: #00cc99;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -85,6 +88,9 @@
             color: #00ffcc;
             font-size: 12px;
         }
+        tr:hover {
+            background-color: #192b3a;
+        }
     </style>
 </head>
 <body>
@@ -92,47 +98,48 @@
 <div class="container">
     <h1>Panel de Control Financiero - Cova 360</h1>
 
+    <!-- FORMULARIO -->
     <div class="card">
         <h2>Registro Inicial de Operaciones</h2>
-        <form action="/insertar" method="POST">
+        <form id="formOperacion" onsubmit="registrarDatos(event)">
             <div class="form-grid">
                 <div class="form-group">
                     <label>Cliente</label>
-                    <input type="text" name="cliente" placeholder="Ej: VISCO ORINOCO" required>
+                    <input type="text" id="cliente" placeholder="Ej: VISCO ORINOCO" required>
                 </div>
                 <div class="form-group">
                     <label>Numero Presupuesto</label>
-                    <input type="text" name="num_presupuesto" placeholder="Ej: 152916">
+                    <input type="text" id="num_presupuesto" placeholder="Ej: 152916">
                 </div>
                 <div class="form-group">
                     <label>Orden de Compra (OC)</label>
-                    <input type="text" name="num_oc" placeholder="Ej: 0060592026" required>
+                    <input type="text" id="num_oc" placeholder="Ej: 0060592026" required>
                 </div>
                 <div class="form-group">
                     <label>Monto Total (USD)</label>
-                    <input type="number" step="0.01" name="monto_total" placeholder="0.00" required>
+                    <input type="number" step="0.01" id="monto_total" placeholder="0.00" required>
                 </div>
                 <div class="form-group">
                     <label>Porcentaje de Anticipo</label>
-                    <select name="anticipo_porc">
+                    <select id="anticipo_porc">
                         <option value="100">100% (Pago Unico)</option>
                         <option value="80">80% (Hito Inicial)</option>
                         <option value="50">50% (Mitad)</option>
                         <option value="30">30% (Anticipo Corto)</option>
                     </select>
                 </div>
-                <button type="submit" class="btn">Registrar Contrato en Base de Datos</button>
+                <button type="submit" class="btn">Registrar Contrato</button>
             </div>
         </form>
     </div>
 
+    <!-- TABLA -->
     <div class="card">
         <h2>Operaciones Comerciales en Curso</h2>
         <div style="overflow-x: auto;">
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
                         <th>Cliente</th>
                         <th>Presupuesto</th>
                         <th>OC</th>
@@ -146,32 +153,90 @@
                         <th>Fase Actual</th>
                     </tr>
                 </thead>
-                <tbody>
-                    {% for op in operaciones %}
-                    <tr>
-                        <td>{{ op['id'] }}</td>
-                        <td style="font-weight: bold; color: #fff;">{{ op['cliente'] }}</td>
-                        <td>{{ op['num_presupuesto'] }}</td>
-                        <td style="color: #00ffcc;">{{ op['num_oc'] }}</td>
-                        <td>${{ op['monto_total'] }}</td>
-                        <td>{{ op['porcentaje_inicial_cobrado'] }}%</td>
-                        <td style="color: #00cc66;">${{ op['monto_cobrado'] }}</td>
-                        <td>{{ op['porcentaje_restante_por_cobrar'] }}%</td>
-                        <td style="color: #ff9900;">${{ op['monto_restante'] }}</td>
-                        <td>{{ op['nota_entrega'] }}</td>
-                        <td>{{ op['factura_final'] }}</td>
-                        <td>{{ op['fase_actual'] }}</td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="12" style="text-align: center; color: #8fa0ae;">No hay operaciones registradas en este momento.</td>
-                    </tr>
-                    {% endfor %}
+                <tbody id="tablaCuerpo">
+                    <!-- Los datos aparecerán aquí automáticamente -->
                 </tbody>
             </table>
         </div>
     </div>
 </div>
+
+<script>
+    // Al cargar la página, recupera y muestra los datos guardados en el navegador
+    document.addEventListener("DOMContentLoaded", cargarTabla);
+
+    function registrarDatos(event) {
+        event.preventDefault(); // Evita el error 405 de recarga externa
+
+        // Obtener los valores del formulario
+        const cliente = document.getElementById('cliente').value;
+        const num_presupuesto = document.getElementById('num_presupuesto').value || 'N/A';
+        const num_oc = document.getElementById('num_oc').value;
+        const monto_total = parseFloat(document.getElementById('monto_total').value);
+        const anticipo_porc = parseFloat(document.getElementById('anticipo_porc').value);
+
+        // Hacer los cálculos automáticos
+        const monto_cobrado = (monto_total * anticipo_porc) / 100.0;
+        const monto_restante = monto_total - monto_cobrado;
+        const porc_restante = 100.0 - anticipo_porc;
+
+        // Estructura del nuevo registro
+        const nuevaOperacion = {
+            cliente,
+            num_presupuesto,
+            num_oc,
+            monto_total: monto_total.toFixed(2),
+            anticipo_porc: anticipo_porc + '%',
+            monto_cobrado: monto_cobrado.toFixed(2),
+            porc_restante: porc_restante + '%',
+            monto_restante: monto_restante.toFixed(2),
+            nota_entrega: 'Pendiente',
+            factura_final: 'No emitida',
+            fase_actual: 'EJECUCION'
+        };
+
+        // Guardar localmente en el navegador (LocalStorage)
+        let operaciones = JSON.parse(localStorage.getItem('operaciones_cova')) || [];
+        operaciones.push(nuevaOperacion);
+        localStorage.setItem('operaciones_cova', JSON.stringify(operaciones));
+
+        // Limpiar formulario y recargar la tabla visualmente
+        document.getElementById('formOperacion').reset();
+        cargarTabla();
+    }
+
+    function cargarTabla() {
+        const tablaCuerpo = document.getElementById('tablaCuerpo');
+        let operaciones = JSON.parse(localStorage.getItem('operaciones_cova')) || [];
+        
+        tablaCuerpo.innerHTML = ''; // Limpiar la tabla antes de rellenar
+
+        if (operaciones.length === 0) {
+            tablaCuerpo.innerHTML = `<tr><td colspan="11" style="text-align: center; color: #8fa0ae;">No hay operaciones registradas en este momento.</td></tr>`;
+            return;
+        }
+
+        // Insertar cada fila guardada
+        operaciones.forEach(op => {
+            const fila = `
+                <tr>
+                    <td style="font-weight: bold; color: #fff;">${op.cliente}</td>
+                    <td>${op.num_presupuesto}</td>
+                    <td style="color: #00ffcc;">${op.num_oc}</td>
+                    <td>$${op.monto_total}</td>
+                    <td>${op.anticipo_porc}</td>
+                    <td style="color: #00cc66;">$${op.monto_cobrado}</td>
+                    <td>${op.porc_restante}</td>
+                    <td style="color: #ff9900;">$${op.monto_restante}</td>
+                    <td><span style="background:#ff9900; color:#0b1319; padding:3px 6px; border-radius:4px; font-size:11px; font-weight:bold;">${op.nota_entrega}</span></td>
+                    <td><span style="background:#ff3333; color:#fff; padding:3px 6px; border-radius:4px; font-size:11px; font-weight:bold;">${op.factura_final}</span></td>
+                    <td><span style="background:#0055ff; color:#fff; padding:3px 6px; border-radius:4px; font-size:11px; font-weight:bold;">${op.fase_actual}</span></td>
+                </tr>
+            `;
+            tablaCuerpo.innerHTML += fila;
+        });
+    }
+</script>
 
 </body>
 </html>
