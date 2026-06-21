@@ -3,17 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control de Órdenes y Facturación - Wladimir Cova</title>
+    <title>Control de Órdenes, Facturación y Pagos - Wladimir Cova</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 1300px; margin: 0 auto; }
+        .container { max-width: 1400px; margin: 0 auto; }
         h2 { color: #1a365d; border-bottom: 2px solid #1a365d; padding-bottom: 10px; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 15px; }
-        label { font-weight: bold; font-size: 14px; color: #4a5568; display: block; margin-bottom: 5px; }
-        input, select { width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; box-sizing: border-box; }
+        label { font-weight: bold; font-size: 13px; color: #4a5568; display: block; margin-bottom: 5px; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
         button { background-color: #1a365d; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; }
         button:hover { background-color: #2a4365; }
+        .btn-action { background-color: #3182ce; padding: 5px 10px; font-size: 11px; border-radius: 4px; width: auto; }
+        .btn-action:hover { background-color: #2b6cb0; }
+        .btn-danger { background-color: #e53e3e; padding: 5px 10px; font-size: 11px; border-radius: 4px; width: auto; margin-left: 5px; }
+        .btn-danger:hover { background-color: #c53030; }
         .table-responsive { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; font-size: 13px; }
         th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; }
@@ -24,9 +28,7 @@
         .badge-no { background-color: #fed7d7; color: #742a2a; }
         .badge-cerrado { background-color: #48bb78; color: white; }
         .badge-pendiente { background-color: #e53e3e; color: white; }
-        /* Estilos para porcentajes */
-        .badge-100 { background-color: #ebf8ff; color: #2b6cb0; border: 1px solid #90cdf4; }
-        .badge-porcentaje { background-color: #feebc8; color: #c05621; border: 1px solid #fbd38d; }
+        .badge-porcentaje { background-color: #ebf8ff; color: #2b6cb0; border: 1px solid #90cdf4; }
     </style>
 </head>
 <body>
@@ -72,29 +74,39 @@
                     <option value="USDT">USDT (Cripto)</option>
                 </select>
             </div>
-            <!-- SELECCIÓN DE PORCENTAJE DE LA OC -->
             <div>
                 <label>Porcentaje de la OC</label>
                 <select id="porcentajeOc">
-                    <option value="100%">100% (Completa)</option>
-                    <option value="90%">90%</option>
-                    <option value="80%">80%</option>
-                    <option value="70%">70%</option>
-                    <option value="50%">50%</option>
+                    <option value="100">100% (Completa)</option>
+                    <option value="90">90%</option>
+                    <option value="80">80%</option>
+                    <option value="70">70%</option>
+                    <option value="50">50%</option>
+                </select>
+            </div>
+            <div>
+                <label>¿N° Voucher / Soporte?</label>
+                <input type="text" id="voucher" placeholder="Ej: Ref 45928 / Efectivo">
+            </div>
+            <div>
+                <label>Estatus de Pago Inicial</label>
+                <select id="estatusPago">
+                    <option value="PENDIENTE">PENDIENTE</option>
+                    <option value="CANCELADA">CANCELADA</option>
                 </select>
             </div>
             <div>
                 <label>¿Correo Enviado?</label>
                 <select id="correo">
                     <option value="NO">NO</option>
-                    <option value="SÍ">SÍ</option>
+                    <option value="SI">SI</option>
                 </select>
             </div>
             <div>
                 <label>¿Factura Entregada?</label>
                 <select id="facturaEntregada">
                     <option value="NO">NO</option>
-                    <option value="SÍ">SÍ</option>
+                    <option value="SI">SI</option>
                 </select>
             </div>
         </div>
@@ -116,9 +128,12 @@
                         <th>Monto</th>
                         <th>Método Pago</th>
                         <th>% OC</th>
+                        <th>% Restante</th>
                         <th>Correo</th>
-                        <th>Fac. Entregada</th>
-                        <th>Estatus Final</th>
+                        <th>Fac. Entg.</th>
+                        <th>N° Voucher / Soporte</th>
+                        <th>Estatus Pago</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="tablaCuerpo">
@@ -130,7 +145,6 @@
 </div>
 
 <script>
-    // Base de datos temporal en la memoria del navegador
     let registros = JSON.parse(localStorage.getItem('control_wladimir')) || [];
 
     function guardarYMostrar() {
@@ -138,15 +152,22 @@
         const cuerpo = document.getElementById('tablaCuerpo');
         cuerpo.innerHTML = '';
         
-        registros.forEach((reg) => {
-            // Lógica automática de estatus
-            const estatus = (reg.correo === 'SÍ' && reg.facturaEntregada === 'SÍ') ? 'CERRADO' : 'PENDIENTE';
-            const claseEstatus = estatus === 'CERRADO' ? 'badge-cerrado' : 'badge-pendiente';
-            const claseCorreo = reg.correo === 'SÍ' ? 'badge-si' : 'badge-no';
-            const claseFac = reg.facturaEntregada === 'SÍ' ? 'badge-si' : 'badge-no';
+        registros.forEach((reg, index) => {
+            const claseEstatus = reg.estatusPago === 'CANCELADA' ? 'badge-cerrado' : 'badge-pendiente';
+            const claseCorreo = reg.correo === 'SI' ? 'badge-si' : 'badge-no';
+            const claseFac = reg.facturaEntregada === 'SI' ? 'badge-si' : 'badge-no';
             
-            // Clase de color según el porcentaje
-            const clasePorcentaje = reg.porcentajeOc === '100%' ? 'badge-100' : 'badge-porcentaje';
+            // Cálculo del porcentaje restante automático
+            const ocNum = parseInt(reg.porcentajeOc) || 100;
+            const restante = 100 - ocNum;
+
+            // Botón de acción dinámico
+            let botonAccion = '';
+            if (reg.estatusPago === 'PENDIENTE') {
+                botonAccion = `<button class="btn-action" onclick="marcarComoCancelada(${index})">💰 Cobrar</button>`;
+            } else {
+                botonAccion = `<span style="color: #48bb78; font-weight: bold;">✓ Pagado</span>`;
+            }
 
             cuerpo.innerHTML += `
                 <tr>
@@ -156,11 +177,17 @@
                     <td>${reg.oc || '-'}</td>
                     <td>${reg.factura || '-'}</td>
                     <td>${reg.monto ? '$ ' + parseFloat(reg.monto).toFixed(2) : '-'}</td>
-                    <td><span class="badge" style="background:#e2e8f0; color:#4a5568;">${reg.metodoPago || 'Pendiente'}</span></td>
-                    <td><span class="badge ${clasePorcentaje}">${reg.porcentajeOc || '100%'}</span></td>
+                    <td><span class="badge" style="background:#e2e8f0; color:#4a5568;">${reg.metodoPago}</span></td>
+                    <td><span class="badge badge-porcentaje">${ocNum}%</span></td>
+                    <td><span class="badge" style="background:#edf2f7;">${restante}%</span></td>
                     <td><span class="badge ${claseCorreo}">${reg.correo}</span></td>
                     <td><span class="badge ${claseFac}">${reg.facturaEntregada}</span></td>
-                    <td><span class="badge ${claseEstatus}">${estatus}</span></td>
+                    <td><strong>${reg.voucher || 'Ninguno'}</strong></td>
+                    <td><span class="badge ${claseEstatus}">${reg.estatusPago}</span></td>
+                    <td>
+                        ${botonAccion}
+                        <button class="btn-danger" onclick="eliminarRegistro(${index})">❌</button>
+                    </td>
                 </tr>
             `;
         });
@@ -176,6 +203,8 @@
             monto: document.getElementById('monto').value,
             metodoPago: document.getElementById('metodoPago').value,
             porcentajeOc: document.getElementById('porcentajeOc').value,
+            voucher: document.getElementById('voucher').value || 'Ninguno',
+            estatusPago: document.getElementById('estatusPago').value,
             correo: document.getElementById('correo').value,
             facturaEntregada: document.getElementById('facturaEntregada').value
         };
@@ -183,16 +212,35 @@
         registros.push(nuevo);
         guardarYMostrar();
         
-        // Limpiar formulario excepto selects
+        // Limpiar campos de texto
         document.getElementById('cliente').value = '';
         document.getElementById('presupuesto').value = '';
         document.getElementById('proforma').value = '';
         document.getElementById('oc').value = '';
         document.getElementById('factura').value = '';
         document.getElementById('monto').value = '';
+        document.getElementById('voucher').value = '';
     }
 
-    // Cargar datos al abrir
+    // FUNCIÓN PARA CORREGIR Y PASAR DE PENDIENTE A CANCELADA DESDE LA TABLA
+    function marcarComoCancelada(index) {
+        const nVoucher = prompt("Ingrese el N° de Voucher, Referencia o detalle de cómo fue cancelado:");
+        if (nVoucher !== null && nVoucher.trim() !== "") {
+            registros[index].estatusPago = 'CANCELADA';
+            registros[index].voucher = nVoucher;
+            guardarYMostrar();
+        } else if (nVoucher !== null) {
+            alert("Debe ingresar un número de voucher o referencia para poder cancelarla.");
+        }
+    }
+
+    function eliminarRegistro(index) {
+        if (confirm("¿Está seguro de eliminar este registro?")) {
+            registros.splice(index, 1);
+            guardarYMostrar();
+        }
+    }
+
     guardarYMostrar();
 </script>
 
