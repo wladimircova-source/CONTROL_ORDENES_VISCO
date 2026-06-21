@@ -15,7 +15,7 @@
             margin: 0 auto;
         }
         h2 {
-            color: #d9531e;
+            color: #2c3e50;
             font-size: 20px;
             margin-bottom: 15px;
             font-weight: bold;
@@ -70,21 +70,41 @@
             border-left: 6px solid #3b82f6;
         }
         .total-pendiente {
-            background-color: #7c2d12;
-            border-left: 6px solid #f97316;
+            background-color: #fee2e2; /* Rojo suave de fondo */
+            color: #991b1b; /* Texto rojo oscuro para contraste */
+            border-left: 6px solid #ef4444;
         }
         .card-total h3 {
             margin: 0 0 5px 0;
             font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 1px;
-            color: #e2e8f0;
         }
+        .total-vendido h3 { color: #e2e8f0; }
+        .total-pendiente h3 { color: #7f1d1d; }
         .card-total .monto {
             font-size: 24px;
             font-weight: bold;
             margin: 0;
         }
+        /* BOTONES DE EXPORTACIÓN */
+        .btn-panel {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        .btn-tool {
+            padding: 8px 15px;
+            font-size: 12px;
+            font-weight: bold;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+        }
+        .btn-excel { background-color: #16a34a; }
+        .btn-print { background-color: #4b5563; }
+
         /* ESTILOS DE LA TABLA */
         .table-container {
             background-color: #fff;
@@ -115,7 +135,7 @@
         tr:nth-child(even) td {
             background-color: #f8fafc;
         }
-        /* BADGES DE ESTADOS Y COLORES */
+        /* BADGES */
         .badge-pct {
             background-color: #ffe6cc;
             color: #b35900;
@@ -154,10 +174,6 @@
             padding: 6px 10px;
             font-weight: bold;
             font-size: 11px;
-            transition: transform 0.1s;
-        }
-        .btn-correo:active {
-            transform: scale(0.9);
         }
         .fase-ejecucion {
             background-color: #ebf8ff;
@@ -175,9 +191,9 @@
             font-weight: bold;
             font-size: 10px;
         }
-        /* BOTONES */
+        /* BOTONES ACCIONES */
         .btn-add {
-            background-color: #d9531e;
+            background-color: #2563eb; /* Azul corporativo moderno */
             color: white;
             border: none;
             padding: 8px 15px;
@@ -187,6 +203,7 @@
             text-transform: uppercase;
             font-size: 11px;
         }
+        .btn-add:hover { background-color: #1d4ed8; }
         .btn-action {
             display: block;
             width: 100%;
@@ -203,6 +220,17 @@
         .btn-green { background-color: #22c55e; }
         .btn-blue { background-color: #3b82f6; }
         .btn-red { background-color: #ef4444; }
+
+        /* REGLAS ESPECIALES PARA LA IMPRESIÓN IMPRESA O EN PDF */
+        @media print {
+            .card-form, .btn-panel, th:last-child, td:last-child, .form-group-filter {
+                display: none !important;
+            }
+            body { background-color: #fff; padding: 0; }
+            .table-container { box-shadow: none; }
+            th { background-color: #475569 !important; color: #000 !important; border: 1px solid #94a3b8; }
+            td { border: 1px solid #cbd5e1; }
+        }
     </style>
 </head>
 <body>
@@ -219,6 +247,16 @@
         <div class="card-total total-pendiente">
             <h3>Saldo Pendiente por Cobrar</h3>
             <p class="monto" id="globalTotalPendiente">$ 0.00</p>
+        </div>
+    </div>
+
+    <!-- CONTROL DE HERRAMIENTAS ADMINISTRATIVAS -->
+    <div class="btn-panel">
+        <button class="btn-tool btn-excel" onclick="exportarExcel()">📊 Exportar a Excel</button>
+        <button class="btn-tool btn-print" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+        <div style="margin-left: auto; display: flex; align-items: center; gap: 8px;" class="form-group-filter">
+            <label style="font-size: 12px; font-weight: bold; color: #475569;">Buscar Orden / Cliente:</label>
+            <input type="text" id="tablaBuscar" onkeyup="cargarTabla()" placeholder="Ej: 006059 o VISCO" style="padding: 5px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px;">
         </div>
     </div>
 
@@ -272,7 +310,7 @@
 
     <!-- TABLA PRINCIPAL DE CONTROL -->
     <div class="table-container">
-        <table>
+        <table id="tablaOperaciones">
             <thead>
                 <tr>
                     <th>Cliente</th>
@@ -288,11 +326,11 @@
                     <th>Correo</th>
                     <th>Fase Actual</th>
                     <th>Voucher / Soporte</th>
-                    <th style="width: 150px;">Acciones Administrativas</th>
+                    <th class="acciones-header">Acciones Administrativas</th>
                 </tr>
             </thead>
             <tbody id="tablaCuerpo">
-                <!-- Se inyecta dinámicamente -->
+                <!-- Contenido dinámico -->
             </tbody>
         </table>
     </div>
@@ -347,6 +385,7 @@
 
     function cargarTabla() {
         const tbody = document.getElementById('tablaCuerpo');
+        const filtro = document.getElementById('tablaBuscar').value.toLowerCase();
         let operaciones = JSON.parse(localStorage.getItem('ops_cova_360')) || [];
 
         tbody.innerHTML = '';
@@ -354,14 +393,19 @@
         let acumuladoVendido = 0;
         let acumuladoPendiente = 0;
 
-        if (operaciones.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="14" style="text-align:center; color:#94a3b8; padding:20px;">No hay transacciones registradas.</td></tr>`;
+        // Filtrar registros en base a la búsqueda en tiempo real
+        let operacionesFiltradas = operaciones.filter(op => {
+            return op.cliente.toLowerCase().includes(filtro) || op.oc.toLowerCase().includes(filtro);
+        });
+
+        if (operacionesFiltradas.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="14" style="text-align:center; color:#94a3b8; padding:20px;">No se encontraron transacciones.</td></tr>`;
             document.getElementById('globalTotalVendido').innerText = "$ 0.00";
             document.getElementById('globalTotalPendiente').innerText = "$ 0.00";
             return;
         }
 
-        operaciones.forEach(op => {
+        operacionesFiltradas.forEach(op => {
             acumuladoVendido += parseFloat(op.monto);
             acumuladoPendiente += parseFloat(op.monto_restante);
 
@@ -371,7 +415,6 @@
             let notaHTML = op.nota === 'Pendiente' ? `<span class="badge-pendiente">${op.nota}</span>` : `<span class="badge-si">${op.nota}</span>`;
             let facturaHTML = op.factura === 'No emitida' ? `<span class="badge-no">${op.factura}</span>` : `<span class="badge-si">${op.factura}</span>`;
             
-            // Renderizado inteligente del Correo (Botón cliqueable con tus estilos de la imagen)
             let claseCorreo = op.correo === 'SI' ? 'badge-si' : 'badge-no';
             let correoHTML = `<button class="btn-correo ${claseCorreo}" onclick="alternarCorreo(${op.id})">${op.correo}</button>`;
 
@@ -399,7 +442,7 @@
                     <td>${correoHTML}</td>
                     <td><span class="${claseFase}">${op.fase}</span></td>
                     <td>${op.voucher}</td>
-                    <td>
+                    <td class="acciones-celda">
                         ${botonPrincipalHTML}
                         <button class="btn-action btn-red" onclick="eliminarFila(${op.id})">❌ Eliminar</button>
                     </td>
@@ -415,9 +458,7 @@
     function alternarCorreo(id) {
         let operaciones = JSON.parse(localStorage.getItem('ops_cova_360'));
         operaciones = operaciones.map(op => {
-            if (op.id === id) {
-                op.correo = op.correo === 'SI' ? 'NO' : 'SI';
-            }
+            if (op.id === id) op.correo = op.correo === 'SI' ? 'NO' : 'SI';
             return op;
         });
         localStorage.setItem('ops_cova_360', JSON.stringify(operaciones));
@@ -478,7 +519,26 @@
             cargarTabla();
         }
     }
+
+    // EXPORTACIÓN LIMPIA A EXCEL
+    function exportarExcel() {
+        let tabla = document.getElementById("tablaOperaciones");
+        let html = tabla.outerHTML;
+        
+        // Remover columna de acciones para el Excel limpio
+        html = html.replace(/<th class="acciones-header">.*?<\/th>/g, '');
+        html = html.replace(/<td class="acciones-celda">.*?<\/td>/g, '');
+
+        let url = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent(html);
+        let link = document.createElement('a');
+        link.href = url;
+        link.download = 'Flujo_De_Caja_Cova360.xls';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 </script>
 
 </body>
+</html>
 </html>
