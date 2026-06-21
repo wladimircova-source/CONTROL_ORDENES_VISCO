@@ -2,10 +2,10 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Control Financiero - Wladimir Cova 360</title>
+    <title>Control Financiero - Cova 360</title>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: Arial, sans-serif;
             background-color: #0b1319;
             color: #e0e6ed;
             margin: 0;
@@ -21,7 +21,6 @@
             border-bottom: 2px solid #00ffcc;
             padding-bottom: 10px;
             text-transform: uppercase;
-            letter-spacing: 2px;
         }
         .card {
             background-color: #14212c;
@@ -29,7 +28,6 @@
             border-radius: 8px;
             padding: 20px;
             margin-bottom: 25px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
         .card h2 {
             color: #00ffcc;
@@ -50,7 +48,6 @@
             font-size: 12px;
             color: #8fa0ae;
             margin-bottom: 5px;
-            text-transform: uppercase;
         }
         .form-group input, .form-group select {
             background-color: #0b1319;
@@ -60,25 +57,15 @@
             color: #fff;
             font-size: 14px;
         }
-        .form-group input:focus {
-            border-color: #00ffcc;
-            outline: none;
-        }
         .btn {
             background-color: #00ffcc;
             color: #0b1319;
             border: none;
-            padding: 10px 20px;
+            padding: 12px 20px;
             font-weight: bold;
             border-radius: 4px;
             cursor: pointer;
             text-transform: uppercase;
-            transition: background 0.3s;
-        }
-        .btn:hover {
-            background-color: #00cc99;
-        }
-        .btn-block {
             grid-column: 1 / -1;
             margin-top: 10px;
         }
@@ -94,4 +81,97 @@
             border-bottom: 1px solid #1f3647;
         }
         th {
-            background-color:
+            background-color: #1c2e3d;
+            color: #00ffcc;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Panel de Control Financiero - Cova 360</h1>
+
+    <div class="card">
+        <h2>Registro Inicial de Operaciones</h2>
+        <form action="/insertar" method="POST">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Cliente</label>
+                    <input type="text" name="cliente" placeholder="Ej: VISCO ORINOCO" required>
+                </div>
+                <div class="form-group">
+                    <label>Numero Presupuesto</label>
+                    <input type="text" name="num_presupuesto" placeholder="Ej: 152916">
+                </div>
+                <div class="form-group">
+                    <label>Orden de Compra (OC)</label>
+                    <input type="text" name="num_oc" placeholder="Ej: 0060592026" required>
+                </div>
+                <div class="form-group">
+                    <label>Monto Total (USD)</label>
+                    <input type="number" step="0.01" name="monto_total" placeholder="0.00" required>
+                </div>
+                <div class="form-group">
+                    <label>Porcentaje de Anticipo</label>
+                    <select name="anticipo_porc">
+                        <option value="100">100% (Pago Unico)</option>
+                        <option value="80">80% (Hito Inicial)</option>
+                        <option value="50">50% (Mitad)</option>
+                        <option value="30">30% (Anticipo Corto)</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn">Registrar Contrato en Base de Datos</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>Operaciones Comerciales en Curso</h2>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Cliente</th>
+                        <th>Presupuesto</th>
+                        <th>OC</th>
+                        <th>Monto Total</th>
+                        <th>% Ini</th>
+                        <th>Monto Cobrado</th>
+                        <th>% Rest</th>
+                        <th>Saldo Restante</th>
+                        <th>Nota Entrega</th>
+                        <th>Factura Final</th>
+                        <th>Fase Actual</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for op in operaciones %}
+                    <tr>
+                        <td>{{ op['id'] }}</td>
+                        <td style="font-weight: bold; color: #fff;">{{ op['cliente'] }}</td>
+                        <td>{{ op['num_presupuesto'] }}</td>
+                        <td style="color: #00ffcc;">{{ op['num_oc'] }}</td>
+                        <td>${{ op['monto_total'] }}</td>
+                        <td>{{ op['porcentaje_inicial_cobrado'] }}%</td>
+                        <td style="color: #00cc66;">${{ op['monto_cobrado'] }}</td>
+                        <td>{{ op['porcentaje_restante_por_cobrar'] }}%</td>
+                        <td style="color: #ff9900;">${{ op['monto_restante'] }}</td>
+                        <td>{{ op['nota_entrega'] }}</td>
+                        <td>{{ op['factura_final'] }}</td>
+                        <td>{{ op['fase_actual'] }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="12" style="text-align: center; color: #8fa0ae;">No hay operaciones registradas en este momento.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
