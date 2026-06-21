@@ -2,239 +2,367 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Control Financiero - Cova 360</title>
+    <title>Operaciones en Curso - Cova 360</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #0b1319;
-            color: #e0e6ed;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #f4f7f6;
             margin: 0;
             padding: 20px;
         }
         .container {
-            max-width: 1200px;
+            max-width: 100%;
             margin: 0 auto;
         }
-        h1 {
-            color: #00ffcc;
-            text-align: center;
-            border-bottom: 2px solid #00ffcc;
-            padding-bottom: 10px;
-            text-transform: uppercase;
+        h2 {
+            color: #d9531e;
+            font-size: 20px;
+            margin-bottom: 15px;
+            font-weight: bold;
         }
-        .card {
-            background-color: #14212c;
-            border: 1px solid #1f3647;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 25px;
-        }
-        .card h2 {
-            color: #00ffcc;
-            margin-top: 0;
-            border-bottom: 1px solid #1f3647;
-            padding-bottom: 8px;
+        /* ESTILOS DEL FORMULARIO */
+        .card-form {
+            background-color: #ffffff;
+            border: 1px solid #dbe2e6;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            align-items: flex-end;
         }
         .form-group {
             display: flex;
             flex-direction: column;
         }
         .form-group label {
-            font-size: 12px;
-            color: #8fa0ae;
-            margin-bottom: 5px;
+            font-size: 11px;
+            font-weight: bold;
+            color: #34495e;
+            margin-bottom: 4px;
+            text-transform: uppercase;
         }
         .form-group input, .form-group select {
-            background-color: #0b1319;
-            border: 1px solid #2c4a61;
+            padding: 6px 10px;
+            border: 1px solid #cbd5e1;
             border-radius: 4px;
-            padding: 8px;
-            color: #fff;
-            font-size: 14px;
+            font-size: 13px;
         }
-        .btn {
-            background-color: #00ffcc;
-            color: #0b1319;
-            border: none;
-            padding: 12px 20px;
-            font-weight: bold;
+        /* ESTILOS DE LA TABLA CORPORATIVA */
+        .table-container {
+            background-color: #fff;
             border-radius: 4px;
-            cursor: pointer;
-            text-transform: uppercase;
-            grid-column: 1 / -1;
-            margin-top: 10px;
-        }
-        .btn:hover {
-            background-color: #00cc99;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow-x: auto;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
-            background-color: #14212c;
-        }
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #1f3647;
+            font-size: 12px;
+            color: #333;
         }
         th {
-            background-color: #1c2e3d;
-            color: #00ffcc;
-            font-size: 12px;
+            background-color: #2c3e50;
+            color: #ffffff;
+            font-weight: bold;
+            padding: 10px 8px;
+            text-align: left;
+            border: 1px solid #34495e;
         }
-        tr:hover {
-            background-color: #192b3a;
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #e2e8f0;
+            border-right: 1px solid #edf2f7;
+            vertical-align: middle;
         }
+        tr:nth-child(even) td {
+            background-color: #f8fafc;
+        }
+        /* BADGES DE ESTADOS */
+        .badge-pct {
+            background-color: #ffe6cc;
+            color: #b35900;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .badge-si {
+            background-color: #e6fffa;
+            color: #00a3c4;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 10px;
+        }
+        .fase-ejecucion {
+            background-color: #ebf8ff;
+            color: #2b6cb0;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 10px;
+        }
+        .fase-proforma {
+            background-color: #fffaf0;
+            color: #dd6b20;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 10px;
+        }
+        /* BOTONES DE ACCIONES */
+        .btn-add {
+            background-color: #d9531e;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 11px;
+        }
+        .btn-action {
+            display: block;
+            width: 100%;
+            padding: 4px 6px;
+            margin-bottom: 4px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 10px;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            color: white;
+        }
+        .btn-green { background-color: #22c55e; }
+        .btn-blue { background-color: #3b82f6; }
+        .btn-red { background-color: #ef4444; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Panel de Control Financiero - Cova 360</h1>
+    <h2>Operaciones en Curso (Flujo de Caja y Documentos)</h2>
 
-    <!-- FORMULARIO -->
-    <div class="card">
-        <h2>Registro Inicial de Operaciones</h2>
-        <form id="formOperacion" onsubmit="registrarDatos(event)">
+    <div class="card-form">
+        <form id="formCova" onsubmit="agregarFila(event)">
             <div class="form-grid">
                 <div class="form-group">
                     <label>Cliente</label>
-                    <input type="text" id="cliente" placeholder="Ej: VISCO ORINOCO" required>
+                    <input type="text" id="ins_cliente" value="VISCO" required>
                 </div>
                 <div class="form-group">
-                    <label>Numero Presupuesto</label>
-                    <input type="text" id="num_presupuesto" placeholder="Ej: 152916">
+                    <label>Presupuesto</label>
+                    <input type="text" id="ins_pre" placeholder="Ej: J351">
                 </div>
                 <div class="form-group">
-                    <label>Orden de Compra (OC)</label>
-                    <input type="text" id="num_oc" placeholder="Ej: 0060592026" required>
+                    <label>Proforma</label>
+                    <input type="text" id="ins_prof" placeholder="Ej: J351">
                 </div>
                 <div class="form-group">
-                    <label>Monto Total (USD)</label>
-                    <input type="number" step="0.01" id="monto_total" placeholder="0.00" required>
+                    <label>N° OC</label>
+                    <input type="text" id="ins_oc" required>
                 </div>
                 <div class="form-group">
-                    <label>Porcentaje de Anticipo</label>
-                    <select id="anticipo_porc">
-                        <option value="100">100% (Pago Unico)</option>
-                        <option value="80">80% (Hito Inicial)</option>
-                        <option value="50">50% (Mitad)</option>
-                        <option value="30">30% (Anticipo Corto)</option>
+                    <label>Monto Total</label>
+                    <input type="number" step="0.01" id="ins_monto" required>
+                </div>
+                <div class="form-group">
+                    <label>% Inicial / Cobrado</label>
+                    <select id="ins_pct">
+                        <option value="100">100%</option>
+                        <option value="80">80%</option>
+                        <option value="50">50%</option>
                     </select>
                 </div>
-                <button type="submit" class="btn">Registrar Contrato</button>
+                <div class="form-group">
+                    <button type="submit" class="btn-add">Agregar Registro</button>
+                </div>
             </div>
         </form>
     </div>
 
-    <!-- TABLA -->
-    <div class="card">
-        <h2>Operaciones Comerciales en Curso</h2>
-        <div style="overflow-x: auto;">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Cliente</th>
-                        <th>Presupuesto</th>
-                        <th>OC</th>
-                        <th>Monto Total</th>
-                        <th>% Ini</th>
-                        <th>Monto Cobrado</th>
-                        <th>% Rest</th>
-                        <th>Saldo Restante</th>
-                        <th>Nota Entrega</th>
-                        <th>Factura Final</th>
-                        <th>Fase Actual</th>
-                    </tr>
-                </thead>
-                <tbody id="tablaCuerpo">
-                    <!-- Los datos aparecerán aquí automáticamente -->
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Cliente</th>
+                    <th>N° Presupuesto / Proforma</th>
+                    <th>N° OC</th>
+                    <th>Monto Total</th>
+                    <th>% Inicial / Cobrado</th>
+                    <th>Monto Cobrado</th>
+                    <th>% Restante / Por Cobrar</th>
+                    <th>Monto Restante</th>
+                    <th>N° Nota Entrega</th>
+                    <th>N° Factura Final</th>
+                    <th>Correo</th>
+                    <th>Fase Actual</th>
+                    <th>Voucher / Soporte</th>
+                    <th style="width: 140px;">Acciones Administrativas</th>
+                </tr>
+            </thead>
+            <tbody id="tablaCuerpo">
                 </tbody>
-            </table>
-        </div>
+        </table>
     </div>
 </div>
 
 <script>
-    // Al cargar la página, recupera y muestra los datos guardados en el navegador
     document.addEventListener("DOMContentLoaded", cargarTabla);
 
-    function registrarDatos(event) {
-        event.preventDefault(); // Evita el error 405 de recarga externa
+    function agregarFila(event) {
+        event.preventDefault();
 
-        // Obtener los valores del formulario
-        const cliente = document.getElementById('cliente').value;
-        const num_presupuesto = document.getElementById('num_presupuesto').value || 'N/A';
-        const num_oc = document.getElementById('num_oc').value;
-        const monto_total = parseFloat(document.getElementById('monto_total').value);
-        const anticipo_porc = parseFloat(document.getElementById('anticipo_porc').value);
+        const cliente = document.getElementById('ins_cliente').value;
+        const pre = document.getElementById('ins_pre').value || '-';
+        const prof = document.getElementById('ins_prof').value || '-';
+        const oc = document.getElementById('ins_oc').value;
+        const monto = parseFloat(document.getElementById('ins_monto').value);
+        const pct_ini = parseInt(document.getElementById('ins_pct').value);
 
-        // Hacer los cálculos automáticos
-        const monto_cobrado = (monto_total * anticipo_porc) / 100.0;
-        const monto_restante = monto_total - monto_cobrado;
-        const porc_restante = 100.0 - anticipo_porc;
+        // Cálculos financieros idénticos a los de la imagen
+        const monto_cobrado = (monto * pct_ini) / 100;
+        const pct_rest = 100 - pct_ini;
+        const monto_restante = monto - monto_cobrado;
 
-        // Estructura del nuevo registro
-        const nuevaOperacion = {
+        // Si paga el 100% entra en EJECUCION, si paga menos (80%, 50%) arranca en PROFORMA
+        const fase = pct_ini === 100 ? 'EJECUCION' : 'PROFORMA';
+
+        const nuevaOp = {
+            id: Date.now(),
             cliente,
-            num_presupuesto,
-            num_oc,
-            monto_total: monto_total.toFixed(2),
-            anticipo_porc: anticipo_porc + '%',
+            pre,
+            prof,
+            oc,
+            monto: monto.toFixed(2),
+            pct_ini: pct_ini + '%',
             monto_cobrado: monto_cobrado.toFixed(2),
-            porc_restante: porc_restante + '%',
+            pct_rest: pct_rest + '%',
             monto_restante: monto_restante.toFixed(2),
-            nota_entrega: 'Pendiente',
-            factura_final: 'No emitida',
-            fase_actual: 'EJECUCION'
+            nota: 'Pendiente',
+            factura: 'No emitida',
+            correo: 'SI',
+            fase: fase,
+            voucher: 'Ninguno'
         };
 
-        // Guardar localmente en el navegador (LocalStorage)
-        let operaciones = JSON.parse(localStorage.getItem('operaciones_cova')) || [];
-        operaciones.push(nuevaOperacion);
-        localStorage.setItem('operaciones_cova', JSON.stringify(operaciones));
+        let operaciones = JSON.parse(localStorage.getItem('ops_cova_360')) || [];
+        operaciones.push(nuevaOp);
+        localStorage.setItem('ops_cova_360', JSON.stringify(operaciones));
 
-        // Limpiar formulario y recargar la tabla visualmente
-        document.getElementById('formOperacion').reset();
+        document.getElementById('formCova').reset();
+        document.getElementById('ins_cliente').value = 'VISCO';
         cargarTabla();
     }
 
     function cargarTabla() {
-        const tablaCuerpo = document.getElementById('tablaCuerpo');
-        let operaciones = JSON.parse(localStorage.getItem('operaciones_cova')) || [];
-        
-        tablaCuerpo.innerHTML = ''; // Limpiar la tabla antes de rellenar
+        const tbody = document.getElementById('tablaCuerpo');
+        let operaciones = JSON.parse(localStorage.getItem('ops_cova_360')) || [];
+
+        tbody.innerHTML = '';
 
         if (operaciones.length === 0) {
-            tablaCuerpo.innerHTML = `<tr><td colspan="11" style="text-align: center; color: #8fa0ae;">No hay operaciones registradas en este momento.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="14" style="text-align:center; color:#94a3b8; padding:20px;">No hay transacciones registradas.</td></tr>`;
             return;
         }
 
-        // Insertar cada fila guardada
         operaciones.forEach(op => {
+            // Manejo de estilos dinámicos de fases según tu captura
+            const claseFase = op.fase === 'EJECUCION' ? 'fase-ejecucion' : 'fase-proforma';
+            
+            // Botón inteligente según estado del dinero restante
+            let botonPrincipalHTML = '';
+            if (parseFloat(op.monto_restante) > 0 && op.fase === 'PROFORMA') {
+                botonPrincipalHTML = `<button class="btn-action btn-blue" onclick="cambiarFase(${op.id}, 'EJECUCION', 'Generar Nota Entrega')">📄 Generar Nota Entrega</button>`;
+            } else if (parseFloat(op.monto_restante) > 0 && op.fase === 'EJECUCION') {
+                botonPrincipalHTML = `<button class="btn-action btn-blue" onclick="cobrarSaldo(${op.id})">💵 Facturar Saldo Restante</button>`;
+            } else {
+                botonPrincipalHTML = `<button class="btn-action btn-green" onclick="cerrarContrato(${op.id})">💾 Registrar Factura y Cerrar</button>`;
+            }
+
             const fila = `
                 <tr>
-                    <td style="font-weight: bold; color: #fff;">${op.cliente}</td>
-                    <td>${op.num_presupuesto}</td>
-                    <td style="color: #00ffcc;">${op.num_oc}</td>
-                    <td>$${op.monto_total}</td>
-                    <td>${op.anticipo_porc}</td>
-                    <td style="color: #00cc66;">$${op.monto_cobrado}</td>
-                    <td>${op.porc_restante}</td>
-                    <td style="color: #ff9900;">$${op.monto_restante}</td>
-                    <td><span style="background:#ff9900; color:#0b1319; padding:3px 6px; border-radius:4px; font-size:11px; font-weight:bold;">${op.nota_entrega}</span></td>
-                    <td><span style="background:#ff3333; color:#fff; padding:3px 6px; border-radius:4px; font-size:11px; font-weight:bold;">${op.factura_final}</span></td>
-                    <td><span style="background:#0055ff; color:#fff; padding:3px 6px; border-radius:4px; font-size:11px; font-weight:bold;">${op.fase_actual}</span></td>
+                    <td style="font-weight:bold;">${op.cliente}</td>
+                    <td>Pre: ${op.pre}<br><span style="color:#64748b;">Prof: ${op.prof}</span></td>
+                    <td style="font-weight:bold; color:#0f172a;">${op.oc}</td>
+                    <td>$ ${parseFloat(op.monto).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    <td><span class="badge-pct">${op.pct_ini}</span></td>
+                    <td>$ ${parseFloat(op.monto_cobrado).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    <td>${op.pct_rest}</td>
+                    <td style="font-weight:bold;">$ ${parseFloat(op.monto_restante).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    <td>${op.nota}</td>
+                    <td>${op.factura}</td>
+                    <td><span class="badge-si">${op.correo}</span></td>
+                    <td><span class="${claseFase}">${op.fase}</span></td>
+                    <td>${op.voucher}</td>
+                    <td>
+                        ${botonPrincipalHTML}
+                        <button class="btn-action btn-red" onclick="eliminarFila(${op.id})">❌ Eliminar</button>
+                    </td>
                 </tr>
             `;
-            tablaCuerpo.innerHTML += fila;
+            tbody.innerHTML += fila;
         });
+    }
+
+    function cambiarFase(id, nuevaFase, textoNota) {
+        let operaciones = JSON.parse(localStorage.getItem('ops_cova_360'));
+        operaciones = operaciones.map(op => {
+            if (op.id === id) {
+                op.fase = nuevaFase;
+                op.nota = textoNota;
+            }
+            return op;
+        });
+        localStorage.setItem('ops_cova_360', JSON.stringify(operaciones));
+        cargarTabla();
+    }
+
+    function cobrarSaldo(id) {
+        let operaciones = JSON.parse(localStorage.getItem('ops_cova_360'));
+        operaciones = operaciones.map(op => {
+            if (op.id === id) {
+                op.monto_cobrado = op.monto;
+                op.monto_restante = "0.00";
+                op.pct_ini = "100%";
+                op.pct_rest = "0%";
+            }
+            return op;
+        });
+        localStorage.setItem('ops_cova_360', JSON.stringify(operaciones));
+        cargarTabla();
+    }
+
+    function cerrarContrato(id) {
+        let operaciones = JSON.parse(localStorage.getItem('ops_cova_360'));
+        const nroFactura = prompt("Ingrese el Numero de Factura Final asignado:");
+        if (!nroFactura) return;
+        
+        operaciones = operaciones.map(op => {
+            if (op.id === id) {
+                op.factura = nroFactura;
+                op.nota = "Entregado";
+                op.voucher = "V-Recibido";
+            }
+            return op;
+        });
+        localStorage.setItem('ops_cova_360', JSON.stringify(operaciones));
+        cargarTabla();
+    }
+
+    function eliminarFila(id) {
+        if(confirm("¿Seguro que deseas eliminar esta orden de compra?")) {
+            let operaciones = JSON.parse(localStorage.getItem('ops_cova_360'));
+            operaciones = operaciones.filter(op => op.id !== id);
+            localStorage.setItem('ops_cova_360', JSON.stringify(operaciones));
+            cargarTabla();
+        }
     }
 </script>
 
