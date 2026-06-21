@@ -31,7 +31,7 @@
         }
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
             gap: 12px;
             align-items: flex-end;
         }
@@ -147,6 +147,18 @@
             font-weight: bold;
             font-size: 11px;
         }
+        .btn-correo {
+            border: none;
+            cursor: pointer;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-weight: bold;
+            font-size: 11px;
+            transition: transform 0.1s;
+        }
+        .btn-correo:active {
+            transform: scale(0.9);
+        }
         .fase-ejecucion {
             background-color: #ebf8ff;
             color: #2b6cb0;
@@ -239,7 +251,16 @@
                     <select id="ins_pct">
                         <option value="100">100%</option>
                         <option value="80">80%</option>
+                        <option value="70">70%</option>
+                        <option value="60">60%</option>
                         <option value="50">50%</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>¿Correo Enviado?</label>
+                    <select id="ins_correo">
+                        <option value="SI">SI</option>
+                        <option value="NO">NO</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -289,6 +310,7 @@
         const oc = document.getElementById('ins_oc').value;
         const monto = parseFloat(document.getElementById('ins_monto').value);
         const pct_ini = parseInt(document.getElementById('ins_pct').value);
+        const correo = document.getElementById('ins_correo').value;
 
         const monto_cobrado = (monto * pct_ini) / 100;
         const pct_rest = 100 - pct_ini;
@@ -309,7 +331,7 @@
             monto_restante: monto_restante.toFixed(2),
             nota: 'Pendiente',
             factura: 'No emitida',
-            correo: 'SI',
+            correo: correo,
             fase: fase,
             voucher: 'Ninguno'
         };
@@ -346,10 +368,12 @@
             const interstateMonto = parseFloat(op.monto_restante);
             const claseFase = op.fase === 'EJECUCION' ? 'fase-ejecucion' : 'fase-proforma';
             
-            // Renderizado de las etiquetas de colores dinámicos
             let notaHTML = op.nota === 'Pendiente' ? `<span class="badge-pendiente">${op.nota}</span>` : `<span class="badge-si">${op.nota}</span>`;
             let facturaHTML = op.factura === 'No emitida' ? `<span class="badge-no">${op.factura}</span>` : `<span class="badge-si">${op.factura}</span>`;
-            let correoHTML = `<span class="badge-si">${op.correo}</span>`;
+            
+            // Renderizado inteligente del Correo (Botón cliqueable con tus estilos de la imagen)
+            let claseCorreo = op.correo === 'SI' ? 'badge-si' : 'badge-no';
+            let correoHTML = `<button class="btn-correo ${claseCorreo}" onclick="alternarCorreo(${op.id})">${op.correo}</button>`;
 
             let botonPrincipalHTML = '';
             if (interstateMonto > 0 && op.fase === 'PROFORMA') {
@@ -388,6 +412,18 @@
         document.getElementById('globalTotalPendiente').innerText = "$ " + acumuladoPendiente.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     }
 
+    function alternarCorreo(id) {
+        let operaciones = JSON.parse(localStorage.getItem('ops_cova_360'));
+        operaciones = operaciones.map(op => {
+            if (op.id === id) {
+                op.correo = op.correo === 'SI' ? 'NO' : 'SI';
+            }
+            return op;
+        });
+        localStorage.setItem('ops_cova_360', JSON.stringify(operaciones));
+        cargarTabla();
+    }
+
     function cambiarFase(id, nuevaFase, textoNota) {
         let operaciones = JSON.parse(localStorage.getItem('ops_cova_360'));
         operaciones = operaciones.map(op => {
@@ -405,7 +441,8 @@
         let operaciones = JSON.parse(localStorage.getItem('ops_cova_360'));
         operaciones = operaciones.map(op => {
             if (op.id === id) {
-                op.monto_cobrado = op.monto;
+                const montoOriginal = parseFloat(op.monto);
+                op.monto_cobrado = montoOriginal.toFixed(2);
                 op.monto_restante = "0.00";
                 op.pct_ini = "100%";
                 op.pct_rest = "0%";
