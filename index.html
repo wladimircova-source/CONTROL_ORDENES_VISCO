@@ -2,238 +2,96 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Control de Flujo de Operaciones e Ingresos</title>
+    <title>Control Financiero - Wladimir Cova 360</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f0f4f8; }
-        .header { background-color: #0b3c5d; color: white; padding: 20px; font-size: 24px; font-weight: bold; }
-        .section { background-color: white; margin: 20px; padding: 20px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .section-title { color: #0b3c5d; border-bottom: 2px solid #ef6c00; padding-bottom: 5px; font-size: 18px; margin-bottom: 15px; }
-        .form-group { display: inline-block; margin-right: 15px; margin-bottom: 10px; }
-        label { display: block; font-size: 12px; font-weight: bold; color: #555; margin-bottom: 5px; }
-        input, select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 150px; }
-        .btn-submit { background-color: #0b3c5d; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; width: 100%; font-weight: bold; margin-top: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
-        th { background-color: #0b3c5d; color: white; padding: 10px; text-align: left; }
-        td { padding: 10px; border-bottom: 1px solid #ddd; }
-        .btn-action { padding: 5px 10px; color: white; border: none; border-radius: 3px; cursor: pointer; font-weight: bold; font-size: 11px; }
-        .btn-green { background-color: #2ecc71; }
-        .btn-blue { background-color: #3498db; }
-    </style>
-</head>
-<body>
-import sqlite3
-import hashlib
-from datetime import datetime
-
-def inicializar_sistema_completo():
-    """Crea la base de datos desde cero con todas las tablas integradas y usuarios base"""
-    conexion = sqlite3.connect("control_financiero_cova.db")
-    cursor = conexion.cursor()
-    
-    # 1. TABLA DE SEGURIDAD: Usuarios del Sistema
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS usuarios (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            clave_encriptada TEXT NOT NULL,
-            rol TEXT NOT NULL -- 'Administrador' o 'Asistente'
-        )
-    """)
-    
-    # 2. TABLA DE SEGURIDAD: Historial de Auditoría (Cámara Secreta)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS historial_auditoria (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            usuario TEXT NOT NULL,
-            accion TEXT NOT NULL,        -- 'CREAR', 'MODIFICAR', 'ELIMINAR'
-            detalle TEXT NOT NULL,       -- Descripción exacta de qué cambió
-            fecha_hora TEXT NOT NULL
-        )
-    """)
-    
-    # 3. TABLA DE OPERACIONES: Control de Órdenes y Facturación (Estructura image_2724d3.png + Impuestos)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS operaciones_en_curso (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            cliente TEXT NOT NULL,
-            num_presupuesto TEXT,
-            num_oc TEXT UNIQUE NOT NULL,
-            monto_total REAL NOT NULL,               -- Monto base con IVA incluido (100%)
-            porcentaje_inicial_cobrado REAL NOT NULL, -- Ej: 80.0 o 100.0
-            monto_cobrado REAL NOT NULL,             -- Dinero bruto ya percibido
-            porcentaje_restante_por_cobrar REAL NOT NULL, -- Ej: 20.0 o 0.0
-            monto_restante REAL NOT NULL,             -- Saldo bruto pendiente
-            
-            -- Nuevos Campos de Retenciones de Ley
-            retencion_iva_porc REAL DEFAULT 75.0,    -- 75% o 100% (Contribuyentes Especiales)
-            retencion_islr_porc REAL DEFAULT 2.0,    -- Tasa ISLR (Servicios/Instalaciones)
-            retencion_alcaldia_porc REAL DEFAULT 0.0, -- Alícuota Municipio Caroní
-            
-            nota_entrega TEXT DEFAULT 'Pendiente',
-            factura_final TEXT DEFAULT 'No emitida',
-            correo_enviado TEXT DEFAULT 'SI',
-            fase_actual TEXT DEFAULT 'EJECUCION',
-            voucher_soporte TEXT DEFAULT 'Ninguno'
-        )
-    """)
-    
-    # INSERTAR USUARIOS DE SEGURIDAD POR DEFECTO (Si no existen)
-    # Las claves se encriptan inmediatamente en formato SHA-256
-    clave_wladimir = hashlib.sha256("Wladimir360*".encode()).hexdigest()
-    cursor.execute("INSERT OR IGNORE INTO usuarios (username, clave_encriptada, rol) VALUES ('wladimir', ?, 'Administrador')", (clave_wladimir,))
-    
-    clave_admin = hashlib.sha256("AdminCaronis2026".encode()).hexdigest()
-    cursor.execute("INSERT OR IGNORE INTO usuarios (username, clave_encriptada, rol) VALUES ('administradora', ?, 'Asistente')", (clave_admin,))
-    
-    conexion.commit()
-    conexion.close()
-    print("[OK] Base de datos e infraestructura de seguridad inicializadas con éxito.")
-
-# =========================================================================
-#                    MÓDULO DE ACCIONES Y SEGURIDAD (AUDITORÍA)
-# =========================================================================
-
-def registrar_log(usuario, accion, detalle):
-    """Guarda en la cámara de seguridad digital cualquier cambio en el sistema"""
-    conexion = sqlite3.connect("control_financiero_cova.db")
-    cursor = conexion.cursor()
-    fecha_actual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    cursor.execute("""
-        INSERT INTO historial_auditoria (usuario, accion, detalle, fecha_hora)
-        VALUES (?, ?, ?, ?)
-    """, (usuario, accion, detalle, fecha_actual))
-    conexion.commit()
-    conexion.close()
-
-def insertar_nueva_orden(usuario_operador, cliente, num_presupuesto, num_oc, monto_total, porc_inicial, ret_iva=75.0, ret_islr=2.0, ret_alcaldia=1.0):
-    """Inserta un registro desde cero calculando automáticamente las columnas según image_2724d3.png"""
-    conexion = sqlite3.connect("control_financiero_cova.db")
-    cursor = conexion.cursor()
-    
-    # Cálculos matemáticos automatizados de flujo
-    monto_cobrado = monto_total * (porc_inicial / 100.0)
-    porc_restante = 100.0 - porc_inicial
-    monto_restante = monto_total - monto_cobrado
-    
-    try:
-        cursor.execute("""
-            INSERT INTO operaciones_en_curso 
-            (cliente, num_presupuesto, num_oc, monto_total, porcentaje_inicial_cobrado, monto_cobrado, 
-             porcentaje_restante_por_cobrar, monto_restante, retencion_iva_porc, retencion_islr_porc, retencion_alcaldia_porc)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (cliente, num_presupuesto, num_oc, monto_total, porc_inicial, monto_cobrado, porc_restante, monto_restante, ret_iva, ret_islr, ret_alcaldia))
-        
-        conexion.commit()
-        # Registrar en la auditoría quién lo hizo
-        detalle = f"Creó nueva OC {num_oc} del cliente {cliente} por un Monto Total de ${monto_total:,.2f}"
-        registrar_log(usuario_operador, "CREAR", detalle)
-        print(f"[ÉXITO] Orden {num_oc} registrada correctamente por {usuario_operador}.")
-    except sqlite3.IntegrityError:
-        print(f"[ERROR] El número de Orden de Compra (OC) {num_oc} ya existe en el sistema.")
-    finally:
-        conexion.close()
-
-# =========================================================================
-#                    MÓDULO DE REPORTES FINANCIEROS Y MATRICES
-# =========================================================================
-
-def generar_relacion_general_saldos():
-    """Genera el panel de control financiero con la separación del 100%, 80% y deducciones fiscales"""
-    conexion = sqlite3.connect("control_financiero_cova.db")
-    cursor = conexion.cursor()
-    
-    cursor.execute("""
-        SELECT monto_total, porcentaje_inicial_cobrado, monto_cobrado, monto_restante, 
-               retencion_iva_porc, retencion_islr_porc, retencion_alcaldia_porc 
-        FROM operaciones_en_curso
-    """)
-    ordenes = cursor.fetchall()
-    
-    deuda_acumulada_100 = 0.0
-    deuda_acumulada_80 = 0.0
-    total_deducciones_estimadas = 0.0
-    saldo_pendiente_totalidad = 0.0
-    
-    for o in ordenes:
-        monto_t, porc_ini, m_cobrado, m_restante, r_iva, r_islr, r_alc = o
-        
-        # Calcular componente aproximado de IVA (16%) dentro del total para extraer la retención
-        monto_base_neto = monto_t / 1.16
-        iva_calculado = monto_t - monto_base_neto
-        
-        deduccion_iva = iva_calculado * (r_iva / 100.0)
-        deduccion_islr = monto_base_neto * (r_islr / 100.0)
-        deduccion_alcaldia = monto_base_neto * (r_alc / 100.0)
-        
-        total_deducciones_estimadas += (deduccion_iva + deduccion_islr + deduccion_alcaldia)
-        saldo_pendiente_totalidad += m_restante
-        
-        if porc_ini == 100.0 and m_restante > 0:
-            deuda_acumulada_100 += m_restante
-        elif porc_ini == 80.0:
-            deuda_acumulada_80 += m_restante
-
-    print("\n" + "="*60)
-    print("   PANEL DE CONTROL FINANCIERO - WLADIMIR COVA 360   ")
-    print("="*60)
-    print(f" [+] Total Deuda en Órdenes al 100%:         ${deuda_acumulada_100:,.2f}")
-    print(f" [+] Total Deuda Parcial (Hito del 80%):     ${deuda_acumulada_80:,.2f}")
-    print(f" [-] Retenciones Acumuladas por Declarar:    ${total_deducciones_estimadas:,.2f}")
-    print("-"*60)
-    print(f" [***] SALDO PENDIENTE EN TOTALIDAD:         ${saldo_pendiente_totalidad:,.2f}")
-    print("="*60)
-    
-    conexion.close()
-
-def visualizar_camara_seguridad_wladimir():
-    """Muestra el historial secreto de modificaciones que solo Wladimir puede auditar"""
-    conexion = sqlite3.connect("control_financiero_cova.db")
-    cursor = conexion.cursor()
-    
-    cursor.execute("SELECT fecha_hora, usuario, accion, detalle FROM historial_auditoria ORDER BY id DESC")
-    logs = cursor.fetchall()
-    
-    print("\n" + "!"*80)
-    print("         REPORTE DE AUDITORÍA DE SEGURIDAD (EXCLUSIVO PARA WLADIMIR)          ")
-    print("!"*80)
-    for l in logs:
-        print(f"[{l[0]}] Usuario: '{l[1]}' | Acción: {l[2]} -> {l[3]}")
-    print("!"*80)
-    conexion.close()
-
-# =========================================================================
-#          PRUEBA DE EJECUCIÓN (SIMULACIÓN DEL DÍA A DÍA EN EL NEGOCIO)
-# =========================================================================
-
-if __name__ == "__main__":
-    # 1. Creamos el sistema completamente limpio
-    inicializar_sistema_completo()
-    
-    print("\n--- SIMULANDO ENTRADAS DE DATOS POR LA ADMINISTRADORA ---")
-    # 2. La administradora inserta una orden al 100% (Como las primeras de tu imagen)
-    insertar_nueva_orden(
-        usuario_operador="administradora", 
-        cliente="VISCO", 
-        num_presupuesto="Pre: J351", 
-        num_oc="0053952026", 
-        monto_total=3358.50, 
-        porc_inicial=100.0,
-        ret_iva=75.0, ret_islr=2.0, ret_alcaldia=1.0  # Retención estimada Caroní
-    )
-    
-    # 3. La administradora inserta una orden al 80% (Como las que te deben el 20% en tu imagen)
-    insertar_nueva_orden(
-        usuario_operador="administradora", 
-        cliente="VISCO", 
-        num_presupuesto="Pre: 6059", 
-        num_oc="0060592026", 
-        monto_total=44500.00, 
-        porc_inicial=80.0,
-        ret_iva=75.0, ret_islr=2.0, ret_alcaldia=1.0
-    )
-    
-    # 4. Cálculo automático de los saldos generales en pantalla
-    generar_relacion_general_saldos()
-    
-    # 5. Tú abres el ojo del sistema para verificar qué ha hecho el personal
-    visualizar_camara_seguridad_wladimir()
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0b1319;
+            color: #e0e6ed;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #00ffcc;
+            text-align: center;
+            border-bottom: 2px solid #00ffcc;
+            padding-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .card {
+            background-color: #14212c;
+            border: 1px solid #1f3647;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .card h2 {
+            color: #00ffcc;
+            margin-top: 0;
+            border-bottom: 1px solid #1f3647;
+            padding-bottom: 8px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            font-size: 12px;
+            color: #8fa0ae;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+        .form-group input, .form-group select {
+            background-color: #0b1319;
+            border: 1px solid #2c4a61;
+            border-radius: 4px;
+            padding: 8px;
+            color: #fff;
+            font-size: 14px;
+        }
+        .form-group input:focus {
+            border-color: #00ffcc;
+            outline: none;
+        }
+        .btn {
+            background-color: #00ffcc;
+            color: #0b1319;
+            border: none;
+            padding: 10px 20px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: background 0.3s;
+        }
+        .btn:hover {
+            background-color: #00cc99;
+        }
+        .btn-block {
+            grid-column: 1 / -1;
+            margin-top: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            background-color: #14212c;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #1f3647;
+        }
+        th {
+            background-color:
