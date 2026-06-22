@@ -234,7 +234,6 @@
         </div>
     </div>
 
-    <!-- FLUJO DE CAJA REAL BASADO EN LO QUE DECLARAS HABER COBRADO -->
     <div class="resumen-financiero">
         <div class="card-total total-vendido">
             <h3>Monto Cobrado Real (Dinero en Cuenta/Mano)</h3>
@@ -364,11 +363,58 @@
     const CLAVE_CORRECTA = "cova360";
 
     document.addEventListener("DOMContentLoaded", () => {
+        // Ejecutar migración automática interna si existen datos viejos
+        let datosHistoricos = JSON.parse(localStorage.getItem('empresa_cova_flow')) || [];
+        let datosNuevos = JSON.parse(localStorage.getItem('ops_cova_360')) || [];
+
+        if (datosHistoricos.length > 0 && datosNuevos.length === 0) {
+            let datosMigrados = datosHistoricos.map(op => {
+                let total = parseFloat(op.montoTotal || op.monto || 0);
+                let pctStr = op.porcentajeOc || op.pct_ini || "100";
+                let pctNum = parseInt(pctStr) || 100;
+                
+                let cobradoReal = 0;
+                if (op.faseActual === 'EJECUCION' || op.estatus_pago === 'CANCELADO') {
+                    cobradoReal = total;
+                } else {
+                    cobradoReal = (total * pctNum) / 100;
+                }
+                
+                let restanteReal = total - cobradoReal;
+                let estatusPago = restanteReal <= 0 ? 'CANCELADO' : 'PENDIENTE';
+
+                return {
+                    id: op.id || Date.now() + Math.random(),
+                    fecha: op.fecha || new Date().toLocaleDateString('es-VE'),
+                    hora: op.hora || "12:00:00 PM",
+                    empresa: op.empresa || "SECURITY",
+                    cliente: op.cliente || "VISCO",
+                    comprador: op.comprador || "Ingeniería / Planta",
+                    pre: op.presupuesto || "-",
+                    prof: op.proforma || "-",
+                    oc: op.oc || "-",
+                    monto: total.toFixed(2),
+                    monto_cobrado_real: cobradoReal.toFixed(2),
+                    monto_restante_real: restanteReal.toFixed(2),
+                    metodo: op.metodoPago || "DOLAR",
+                    pct_ini: pctNum + "%",
+                    estatus_pago: estatusPago,
+                    nota: op.notaEntrega || "Pendiente",
+                    factura: op.factura || "No emitida",
+                    correo: op.correo || "SI",
+                    fase: op.faseActual || "PROFORMA",
+                    observacion: op.observaciones || ""
+                };
+            });
+            localStorage.setItem('ops_cova_360', JSON.stringify(datosMigrados));
+        }
+
         solicitarAcceso();
     });
 
     function verificarSecurityEstilos() {
         const contenedor = document.getElementById('contenedorPrincipal');
+        if (!contenedor) return;
         if (!esAdmin) {
             contenedor.classList.add('modo-consulta');
             document.getElementById('txtRol').innerText = "Acceso: SÓLO CONSULTA";
@@ -386,7 +432,7 @@
             if(pass !== null && pass !== "") alert("Clave incorrecta. Entrando en modo de lectura.");
             esAdmin = false;
         }
-        verSecurityEstilos();
+        verificarSecurityEstilos();
         cargarTabla();
     }
 
@@ -407,28 +453,11 @@
         const pct_ini = document.getElementById('ins_pct').value + '%';
         const correo = document.getElementById('ins_correo').value;
 
-        // LÓGICA DE CONTROL DE CAJA
         const mrestante_real = monto - mcobrado_real;
         const estatus_pago = mrestante_real <= 0 ? 'CANCELADO' : 'PENDIENTE';
         const fase = estatus_pago === 'CANCELADO' ? 'EJECUCION' : 'PROFORMA';
 
         let operaciones = JSON.parse(localStorage.getItem('ops_cova_360')) || [];
-
-        // Migración automática para datos antiguos sin estos nuevos campos
-        operaciones = operaciones.map(op => {
-            if(op.monto_cobrado_real === undefined) {
-                let m = parseFloat(op.monto || 0);
-                if(op.estatus_pago === 'CANCELADO') {
-                    op.monto_cobrado_real = m.toFixed(2);
-                    op.monto_restante_real = "0.00";
-                } else {
-                    let base = parseFloat(op.monto_cobrado || 0);
-                    op.monto_cobrado_real = base.toFixed(2);
-                    op.monto_restante_real = (m - base).toFixed(2);
-                }
-            }
-            return op;
-        });
 
         if (editId) {
             operaciones = operaciones.map(op => {
@@ -451,7 +480,7 @@
         } else {
             const ahora = new Date();
             const fechaActual = ahora.toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            const horaActual = SecurityHora(ahora);
+            const horaActual = ahora.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
 
             const nuevaOp = {
                 id: Date.now(),
@@ -479,12 +508,9 @@
         cargarTabla();
     }
 
-    function SecurityHora(d) {
-        return d.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-    }
-
     function cargarTabla() {
         const tbody = document.getElementById('tablaCuerpo');
+        if(!tbody) return;
         const filtro = document.getElementById('tablaBuscar').value.toLowerCase();
         let operaciones = JSON.parse(localStorage.getItem('ops_cova_360')) || [];
 
@@ -508,25 +534,11 @@
         }
 
         filtradas.forEach(op => {
-            // Inicialización segura de valores monetarios reales
-            if(op.monto_cobrado_real === undefined) {
-                let m = parseFloat(op.monto || 0);
-                if(op.estatus_pago === 'CANCELADO') {
-                    op.monto_cobrado_real = m.toFixed(2);
-                    op.monto_restante_real = "0.00";
-                } else {
-                    let base = parseFloat(op.monto_cobrado || 0);
-                    op.monto_cobrado_real = base.toFixed(2);
-                    op.monto_restante_real = (m - base).toFixed(2);
-                }
-            }
-
             const mTotal = parseFloat(op.monto);
-            const mCobradoReal = parseFloat(op.monto_cobrado_real);
-            const mRestanteReal = parseFloat(op.monto_restante_real);
+            const mCobradoReal = parseFloat(op.monto_cobrado_real || 0);
+            const mRestanteReal = parseFloat(op.monto_restante_real || 0);
             const estatus = op.estatus_pago || 'PENDIENTE';
 
-            // ACUMULADORES GLOBALES DE FLUJO DE CAJA EXACTOS
             acumuladoCobradoReal += mCobradoReal;
             acumuladoPendienteReal += mRestanteReal;
 
@@ -606,7 +618,7 @@
         
         const mcobrado = parseFloat(nuevoMontoReal);
         if (isNaN(mcobrado) || mcobrado < 0 || mcobrado > total) {
-            alert("Error: Ingrese un monto numérico válido y menor o igual al total de la OC.");
+            alert("Error: Ingrese un monto numérico válido.");
             return;
         }
 
@@ -627,7 +639,7 @@
 
     function reabrirOrden(id) {
         if(!esAdmin) return;
-        if(confirm("¿Deseas devolver este registro al estado PENDIENTE para modificar montos?")) {
+        if(confirm("¿Deseas devolver este registro al estado PENDIENTE?")) {
             let operaciones = JSON.parse(localStorage.getItem('ops_cova_360'));
             operaciones = operaciones.map(op => {
                 if (op.id === id) {
