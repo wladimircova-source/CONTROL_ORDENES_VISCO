@@ -63,7 +63,7 @@
         }
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
             gap: 15px;
             align-items: flex-end;
         }
@@ -103,12 +103,12 @@
         .total-vendido {
             background-color: #1e293b;
             border: 1px solid #334155;
-            border-left: 6px solid #10b981; /* Verde éxito */
+            border-left: 6px solid #10b981;
         }
         .total-pendiente {
             background-color: #1e293b;
             border: 1px solid #334155;
-            border-left: 6px solid #f59e0b; /* Ámbar/Rojo */
+            border-left: 6px solid #ef4444;
         }
         .card-total h3 {
             margin: 0 0 8px 0;
@@ -234,14 +234,14 @@
         </div>
     </div>
 
-    <!-- PANELES DE TOTALES CON LOGICA MATEMATICA CORREGIDA -->
+    <!-- FLUJO DE CAJA REAL BASADO EN LO QUE DECLARAS HABER COBRADO -->
     <div class="resumen-financiero">
         <div class="card-total total-vendido">
-            <h3>Monto Total Cobrado Real (Dinero en Mano)</h3>
+            <h3>Monto Cobrado Real (Dinero en Cuenta/Mano)</h3>
             <p class="monto" id="globalTotalVendido">$ 0.00</p>
         </div>
         <div class="card-total total-pendiente">
-            <h3>Monto Total Pendiente por Cobrar</h3>
+            <h3>Monto Neto Pendiente por Cobrar (Cuentas por Cobrar)</h3>
             <p class="monto" id="globalTotalPendiente">$ 0.00</p>
         </div>
     </div>
@@ -250,8 +250,8 @@
         <button class="btn-tool btn-excel" onclick="exportarExcel()">📊 Exportar a Excel</button>
         <button class="btn-tool btn-print" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
         <div style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
-            <label style="font-size: 12px; font-weight: bold; color: #94a3b8;">Buscar Orden / Cliente:</label>
-            <input type="text" id="tablaBuscar" onkeyup="cargarTabla()" placeholder="Ej: 5222 o VISCO" style="padding: 6px 12px; background-color: #1e293b; border: 1px solid #475569; border-radius: 4px; font-size: 12px; color: white;">
+            <label style="font-size: 12px; font-weight: bold; color: #94a3b8;">Filtrar Tabla:</label>
+            <input type="text" id="tablaBuscar" onkeyup="cargarTabla()" placeholder="Ej: 5222, VISCO, PENDIENTE..." style="padding: 6px 12px; background-color: #1e293b; border: 1px solid #475569; border-radius: 4px; font-size: 12px; color: white;">
         </div>
     </div>
 
@@ -288,8 +288,12 @@
                     <input type="text" id="ins_oc" required>
                 </div>
                 <div class="form-group">
-                    <label>Monto Total ($)</label>
+                    <label>Monto Total OC ($)</label>
                     <input type="number" step="0.01" id="ins_monto" required>
+                </div>
+                <div class="form-group">
+                    <label>Monto Cobrado Real ($)</label>
+                    <input type="number" step="0.01" id="ins_monto_cobrado_real" placeholder="¿Cuánto dinero real ya entró?" value="0" required>
                 </div>
                 <div class="form-group">
                     <label>Método de Pago</label>
@@ -300,7 +304,7 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>% Inicial Pactado</label>
+                    <label>% Pactado Inicial</label>
                     <select id="ins_pct">
                         <option value="100">100%</option>
                         <option value="80">80%</option>
@@ -310,14 +314,7 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Estatus de Pago</label>
-                    <select id="ins_estatus_pago">
-                        <option value="PENDIENTE">PENDIENTE (Falta cobrar restante)</option>
-                        <option value="CANCELADO">CANCELADO (100% Cobrado completo)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>¿Correo?</label>
+                    <label>¿Correo enviado?</label>
                     <select id="ins_correo">
                         <option value="SI">SI</option>
                         <option value="NO">NO</option>
@@ -341,11 +338,11 @@
                     <th>Comprador</th>
                     <th>N° Presupuesto / Proforma</th>
                     <th>N° OC</th>
-                    <th>Monto Total</th>
+                    <th>Monto Total OC</th>
                     <th>Método</th>
-                    <th>% Cobrado Pactado</th>
-                    <th>Monto Cobrado (Base)</th>
-                    <th>Monto Restante</th>
+                    <th>% Pactado</th>
+                    <th>Monto Cobrado Real</th>
+                    <th>Monto Restante Real</th>
                     <th>Estatus Pago</th>
                     <th>N° Nota Entrega</th>
                     <th>N° Factura Final</th>
@@ -370,7 +367,7 @@
         solicitarAcceso();
     });
 
-    function verificarSeguridadEstilos() {
+    function verificarSecurityEstilos() {
         const contenedor = document.getElementById('contenedorPrincipal');
         if (!esAdmin) {
             contenedor.classList.add('modo-consulta');
@@ -389,7 +386,7 @@
             if(pass !== null && pass !== "") alert("Clave incorrecta. Entrando en modo de lectura.");
             esAdmin = false;
         }
-        verificarSeguridadEstilos();
+        verSecurityEstilos();
         cargarTabla();
     }
 
@@ -405,16 +402,33 @@
         const prof = document.getElementById('ins_prof').value || '-';
         const oc = document.getElementById('ins_oc').value;
         const monto = parseFloat(document.getElementById('ins_monto').value);
+        const mcobrado_real = parseFloat(document.getElementById('ins_monto_cobrado_real').value || 0);
         const metodo = document.getElementById('ins_metodo').value;
-        const pct_ini = parseInt(document.getElementById('ins_pct').value);
-        const estatus_pago = document.getElementById('ins_estatus_pago').value;
+        const pct_ini = document.getElementById('ins_pct').value + '%';
         const correo = document.getElementById('ins_correo').value;
 
-        const monto_cobrado = (monto * pct_ini) / 100;
-        const monto_restante = monto - monto_cobrado;
+        // LÓGICA DE CONTROL DE CAJA
+        const mrestante_real = monto - mcobrado_real;
+        const estatus_pago = mrestante_real <= 0 ? 'CANCELADO' : 'PENDIENTE';
         const fase = estatus_pago === 'CANCELADO' ? 'EJECUCION' : 'PROFORMA';
 
         let operaciones = JSON.parse(localStorage.getItem('ops_cova_360')) || [];
+
+        // Migración automática para datos antiguos sin estos nuevos campos
+        operaciones = operaciones.map(op => {
+            if(op.monto_cobrado_real === undefined) {
+                let m = parseFloat(op.monto || 0);
+                if(op.estatus_pago === 'CANCELADO') {
+                    op.monto_cobrado_real = m.toFixed(2);
+                    op.monto_restante_real = "0.00";
+                } else {
+                    let base = parseFloat(op.monto_cobrado || 0);
+                    op.monto_cobrado_real = base.toFixed(2);
+                    op.monto_restante_real = (m - base).toFixed(2);
+                }
+            }
+            return op;
+        });
 
         if (editId) {
             operaciones = operaciones.map(op => {
@@ -423,11 +437,9 @@
                         ...op,
                         empresa, cliente, comprador, pre, prof, oc,
                         monto: monto.toFixed(2),
-                        metodo,
-                        pct_ini: pct_ini + '%',
-                        monto_cobrado: monto_cobrado.toFixed(2),
-                        monto_restante: monto_restante.toFixed(2),
-                        estatus_pago, correo, fase
+                        monto_cobrado_real: mcobrado_real.toFixed(2),
+                        monto_restante_real: mrestante_real.toFixed(2),
+                        metodo, pct_ini, estatus_pago, correo, fase
                     };
                 }
                 return op;
@@ -439,7 +451,7 @@
         } else {
             const ahora = new Date();
             const fechaActual = ahora.toLocaleDateString('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            const horaActual = ahora.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+            const horaActual = SecurityHora(ahora);
 
             const nuevaOp = {
                 id: Date.now(),
@@ -447,16 +459,14 @@
                 hora: horaActual,
                 empresa, cliente, comprador, pre, prof, oc,
                 monto: monto.toFixed(2),
-                metodo,
-                pct_ini: pct_ini + '%',
-                monto_cobrado: monto_cobrado.toFixed(2),
-                monto_restante: monto_restante.toFixed(2),
-                estatus_pago,
+                monto_cobrado_real: mcobrado_real.toFixed(2),
+                monto_restante_real: mrestante_real.toFixed(2),
+                metodo, estatus_pago,
                 nota: 'Pendiente',
                 factura: 'No emitida',
                 correo: correo,
                 fase: fase,
-                voucher: 'Ninguno',
+                pct_ini: pct_ini,
                 observacion: ''
             };
             operaciones.push(nuevaOp);
@@ -465,7 +475,12 @@
         localStorage.setItem('ops_cova_360', JSON.stringify(operaciones));
         document.getElementById('formCova').reset();
         document.getElementById('ins_cliente').value = 'VISCO';
+        document.getElementById('ins_monto_cobrado_real').value = '0';
         cargarTabla();
+    }
+
+    function SecurityHora(d) {
+        return d.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
     }
 
     function cargarTabla() {
@@ -478,38 +493,45 @@
         let acumuladoPendienteReal = 0;
 
         let filtradas = operaciones.filter(op => {
+            const estatusStr = (op.estatus_pago || 'PENDIENTE').toLowerCase();
             return op.cliente.toLowerCase().includes(filtro) || 
                    op.oc.toLowerCase().includes(filtro) || 
+                   estatusStr.includes(filtro) ||
                    (op.comprador && op.comprador.toLowerCase().includes(filtro));
         });
 
         if (filtradas.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="19" style="text-align:center; color:#64748b; padding:25px;">No se encontraron transacciones.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="19" style="text-align:center; color:#64748b; padding:25px;">No se encontraron registros financieros bajo este filtro.</td></tr>`;
             document.getElementById('globalTotalVendido').innerText = "$ 0.00";
             document.getElementById('globalTotalPendiente').innerText = "$ 0.00";
             return;
         }
 
         filtradas.forEach(op => {
+            // Inicialización segura de valores monetarios reales
+            if(op.monto_cobrado_real === undefined) {
+                let m = parseFloat(op.monto || 0);
+                if(op.estatus_pago === 'CANCELADO') {
+                    op.monto_cobrado_real = m.toFixed(2);
+                    op.monto_restante_real = "0.00";
+                } else {
+                    let base = parseFloat(op.monto_cobrado || 0);
+                    op.monto_cobrado_real = base.toFixed(2);
+                    op.monto_restante_real = (m - base).toFixed(2);
+                }
+            }
+
             const mTotal = parseFloat(op.monto);
-            const mCobradoBase = parseFloat(op.monto_cobrado || 0);
-            const mRestante = parseFloat(op.monto_restante || 0);
+            const mCobradoReal = parseFloat(op.monto_cobrado_real);
+            const mRestanteReal = parseFloat(op.monto_restante_real);
             const estatus = op.estatus_pago || 'PENDIENTE';
 
-            // REESCRITURA MATEMÁTICA EXACTA:
-            if (estatus === 'CANCELADO') {
-                // Si ya se cobró por completo (100%), todo el capital va a cobrado real.
-                acumuladoCobradoReal += mTotal;
-            } else {
-                // Si está PENDIENTE, sumamos el anticipo (80%) a Cobrado Real, y la deuda (20%) a Pendiente.
-                acumuladoCobradoReal += mCobradoBase;
-                acumuladoPendienteReal += mRestante;
-            }
+            // ACUMULADORES GLOBALES DE FLUJO DE CAJA EXACTOS
+            acumuladoCobradoReal += mCobradoReal;
+            acumuladoPendienteReal += mRestanteReal;
 
             let empresaHTML = `<span class="badge-soluciones">SOLUCIONES 360</span>`;
-            if (op.empresa === 'SECURITY') {
-                empresaHTML = `<span class="badge-security">SECURITY MALL</span>`;
-            }
+            if (op.empresa === 'SECURITY') empresaHTML = `<span class="badge-security">SECURITY MALL</span>`;
 
             let metodoClass = 'badge-dolar';
             if(op.metodo === 'USDT') metodoClass = 'badge-usdt';
@@ -533,9 +555,9 @@
 
             let botonPrincipalHTML = '';
             if (estatus === 'PENDIENTE') {
-                botonPrincipalHTML = `<button class="btn-action btn-green" onclick="cambiarEstatusPago(${op.id}, 'CANCELADO')">💵 Completar a PAGADO (100%)</button>`;
+                botonPrincipalHTML = `<button class="btn-action btn-green" onclick="abrirAbonoRapido(${op.id}, ${mTotal}, ${mCobradoReal})">💵 Abonar / Cancelar</button>`;
             } else {
-                botonPrincipalHTML = `<button class="btn-action btn-gray" onclick="cambiarEstatusPago(${op.id}, 'PENDIENTE')">🔄 Devolver a PENDIENTE</button>`;
+                botonPrincipalHTML = `<button class="btn-action btn-gray" onclick="reabrirOrden(${op.id})">🔄 Reabrir Orden</button>`;
             }
 
             let botonFacturaHTML = op.factura === 'No emitida' ? 
@@ -552,9 +574,9 @@
                     <td style="font-weight:bold; color:#3b82f6;">${op.oc}</td>
                     <td style="color:#fff; font-weight:bold;">$ ${mTotal.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
                     <td>${metodoHTML}</td>
-                    <td><span class="badge-pct">${op.pct_ini}</span></td>
-                    <td>$ ${mCobradoBase.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                    <td>$ ${mRestante.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    <td><span class="badge-pct">${op.pct_ini || '100%'}</span></td>
+                    <td style="color:#10b981; font-weight:bold;">$ ${mCobradoReal.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    <td style="color:#fca5a5; font-weight:bold;">$ ${mRestanteReal.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
                     <td>${estatusPagoHTML}</td>
                     <td>${notaHTML}</td>
                     <td>${facturaHTML}</td>
@@ -576,20 +598,47 @@
         document.getElementById('globalTotalPendiente').innerText = "$ " + acumuladoPendienteReal.toLocaleString('en-US', {minimumFractionDigits: 2});
     }
 
-    function cambiarEstatusPago(id, nuevoEstatus) {
+    function abrirAbonoRapido(id, total, cobradoActual) {
         if(!esAdmin) return;
+        const nuevoMontoReal = prompt(`FLUJO DE CAJA COVA 360\nMonto total de la OC: $${total.toFixed(2)}\nMonto cobrado cargado actualmente: $${cobradoActual.toFixed(2)}\n\nIngrese la nueva suma TOTAL acumulada que ya está disponible en su cuenta USDT / Efectivo:`, total.toFixed(2));
+        
+        if (nuevoMontoReal === null || nuevoMontoReal === "") return;
+        
+        const mcobrado = parseFloat(nuevoMontoReal);
+        if (isNaN(mcobrado) || mcobrado < 0 || mcobrado > total) {
+            alert("Error: Ingrese un monto numérico válido y menor o igual al total de la OC.");
+            return;
+        }
+
         let operaciones = JSON.parse(localStorage.getItem('ops_cova_360'));
         operaciones = operaciones.map(op => {
             if (op.id === id) {
-                op.estatus_pago = nuevoEstatus;
-                if(nuevoEstatus === 'CANCELADO') {
-                    op.fase = 'EJECUCION';
-                }
+                op.monto_cobrado_real = mcobrado.toFixed(2);
+                const restante = total - mcobrado;
+                op.monto_restante_real = restante.toFixed(2);
+                op.estatus_pago = restante <= 0 ? 'CANCELADO' : 'PENDIENTE';
+                if(op.estatus_pago === 'CANCELADO') op.fase = 'EJECUCION';
             }
             return op;
         });
         localStorage.setItem('ops_cova_360', JSON.stringify(operaciones));
         cargarTabla();
+    }
+
+    function reabrirOrden(id) {
+        if(!esAdmin) return;
+        if(confirm("¿Deseas devolver este registro al estado PENDIENTE para modificar montos?")) {
+            let operaciones = JSON.parse(localStorage.getItem('ops_cova_360'));
+            operaciones = operaciones.map(op => {
+                if (op.id === id) {
+                    op.estatus_pago = 'PENDIENTE';
+                    op.fase = 'PROFORMA';
+                }
+                return op;
+            });
+            localStorage.setItem('ops_cova_360', JSON.stringify(operaciones));
+            cargarTabla();
+        }
     }
 
     function vincularFactura(id) {
@@ -623,9 +672,9 @@
         document.getElementById('ins_prof').value = op.prof === '-' ? '' : op.prof;
         document.getElementById('ins_oc').value = op.oc;
         document.getElementById('ins_monto').value = op.monto;
+        document.getElementById('ins_monto_cobrado_real').value = op.monto_cobrado_real || '0';
         document.getElementById('ins_metodo').value = op.metodo || 'USDT';
-        document.getElementById('ins_pct').value = parseInt(op.pct_ini);
-        document.getElementById('ins_estatus_pago').value = op.estatus_pago || 'PENDIENTE';
+        document.getElementById('ins_pct').value = parseInt(op.pct_ini || 100);
         document.getElementById('ins_correo').value = op.correo;
 
         const btnSubmit = document.getElementById('btnFormSubmit');
